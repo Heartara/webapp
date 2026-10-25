@@ -51,3 +51,7 @@ document.querySelectorAll('footer').forEach(footer=>{
   link.style.textDecoration='underline';
   paragraph.append(link);footer.append(paragraph);
 });
+
+// Refresh the shared design when a browser has retained an older stylesheet.
+const themeLink=document.querySelector('link[rel="stylesheet"][href^="styles.css"]');
+if(themeLink){themeLink.href='styles.css?v=blush-botanicals-20261025';}
