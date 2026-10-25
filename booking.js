@@ -1,15 +1,68 @@
-const slots = document.querySelector('#appointment-slots');
-fetch('availability.json', {cache:'no-store'}).then(r => {if(!r.ok) throw Error(); return r.json();}).then(items => {
-  if(!Array.isArray(items)) throw Error();
-  slots.replaceChildren();
-  const upcoming = items.filter(item => typeof item.start === 'string' && Date.parse(item.start) > Date.now() && typeof item.type === 'string').sort((a,b) => Date.parse(a.start)-Date.parse(b.start));
-  if(!upcoming.length) {slots.textContent='Please contact Penny for the next available appointments.';return;}
-  upcoming.forEach(item => {const row=document.createElement('div');row.className='slot';const link=document.createElement('a');const time=new Intl.DateTimeFormat('en-AU',{dateStyle:'full',timeStyle:'short',timeZone:'Australia/Brisbane'}).format(new Date(item.start));link.textContent=time+' (Queensland) · '+item.type;link.href='#request';link.addEventListener('click',()=>{document.querySelector('#booking-time').value=time+' (Queensland) · '+item.type;});row.append(link);slots.append(row);});
-}).catch(()=>{slots.textContent='Availability could not be loaded. Please contact Penny with your preferred times.';});
+import {queenslandDate,weekday,requestError} from './booking-rules.js';
+const calendar=document.querySelector('#booking-calendar');
+const dateInput=document.querySelector('#booking-date');
+const clock=document.querySelector('#booking-clock');
+const selection=document.querySelector('#calendar-selection');
+const guidance=document.querySelector('#booking-time-guidance');
+const today=queenslandDate();
+let [year,month]=today.split('-').map(Number);month--;
+dateInput.min=today;
+const label=key=>new Intl.DateTimeFormat('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(key+'T00:00:00Z'));
+function selectDate(key){
+ dateInput.value=key;
+ const day=weekday(key),evening=day>=2&&day<=5;
+ clock.min=evening?'17:00':'';
+ clock.setCustomValidity('');
+ guidance.textContent=evening?'Tuesday to Friday: request an evening time from 5 pm (Queensland).':'Monday or weekend: enter your preferred time (Queensland).';
+ selection.textContent=label(key)+' selected. Choose a preferred time below. Penny will personally confirm whether she is available.';
+ render();
+}
+function render(){
+ calendar.replaceChildren();
+ document.querySelector('#calendar-month').textContent=new Intl.DateTimeFormat('en-AU',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month,1)));
+ document.querySelector('#calendar-prev').disabled=year===Number(today.slice(0,4))&&month===Number(today.slice(5,7))-1;
+ for(const name of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']){const el=document.createElement('div');el.className='calendar-weekday';el.textContent=name;calendar.append(el);}
+ const offset=(new Date(Date.UTC(year,month,1)).getUTCDay()+6)%7;
+ for(let i=0;i<offset;i++){const blank=document.createElement('div');blank.setAttribute('aria-hidden','true');calendar.append(blank);}
+ const days=new Date(Date.UTC(year,month+1,0)).getUTCDate();
+ for(let day=1;day<=days;day++){
+  const key=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const dow=weekday(key),evening=dow>=2&&dow<=5,past=key<queenslandDate();
+  const button=document.createElement('button');button.type='button';button.className='calendar-day'+(evening?' evening':'');button.disabled=past;
+  button.textContent=day;button.setAttribute('aria-pressed',String(dateInput.value===key));
+  button.setAttribute('aria-label',label(key)+(past?' — past date':evening?' — request from 5 pm, subject to confirmation':' — request a time, subject to confirmation'));
+  const note=document.createElement('span');note.textContent=past?'Past':evening?'From 5 pm':'By request';button.append(note);
+  button.addEventListener('click',()=>{selectDate(key);clock.focus();});calendar.append(button);
+ }
+}
+document.querySelector('#calendar-prev').addEventListener('click',()=>{if(month===0){month=11;year--;}else month--;render();});
+document.querySelector('#calendar-next').addEventListener('click',()=>{if(month===11){month=0;year++;}else month++;render();});
+dateInput.addEventListener('change',()=>{if(weekday(dateInput.value)!==null){[year,month]=dateInput.value.split('-').map(Number);month--;selectDate(dateInput.value);}});
+clock.addEventListener('input',()=>clock.setCustomValidity(''));
+render();
+const slots=document.querySelector('#appointment-slots');
+fetch('availability.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(items=>{
+ if(!Array.isArray(items))throw Error();
+ const upcoming=items.filter(item=>typeof item.start==='string'&&Date.parse(item.start)>Date.now()&&typeof item.type==='string').sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+ if(!upcoming.length)return;
+ const heading=document.createElement('h3');heading.textContent='Additional times shared by Penny';slots.append(heading);
+ upcoming.forEach(item=>{
+  const row=document.createElement('div');row.className='slot';const link=document.createElement('a');link.href='#request';
+  const instant=new Date(item.start),key=queenslandDate(instant);
+  const time=new Intl.DateTimeFormat('en-GB',{timeZone:'Australia/Brisbane',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(instant);
+  link.textContent=label(key)+' · '+time+' Queensland · '+item.type+' (request only)';
+  link.addEventListener('click',()=>{[year,month]=key.split('-').map(Number);month--;selectDate(key);clock.value=time;});row.append(link);slots.append(row);
+ });
+}).catch(()=>{slots.textContent='Additional appointment information could not be loaded. You can still request your preferred date using the calendar.';});
 document.querySelector('#booking-form').addEventListener('submit',event=>{
-  event.preventDefault();if(!event.target.reportValidity())return;
-  const value=id=>document.querySelector(id).value.trim();
-  const body=`Name: ${value('#booking-name')}\nEmail: ${value('#booking-email')}\nSession: ${value('#booking-service')}\nPreferred time: ${value('#booking-time')}\n\n${value('#booking-note')}\n\nI understand my appointment is subject to confirmation.`;
-  window.location.href='mailto:heartarahealing@gmail.com?subject='+encodeURIComponent('Heartara booking request')+'&body='+encodeURIComponent(body);
-  document.querySelector('#booking-status').textContent='Your email app will open. Please review and send your request there. If it does not open, email heartarahealing@gmail.com directly. Your appointment is not yet confirmed.';
+ event.preventDefault();
+ const error=requestError(dateInput.value,clock.value);
+ clock.setCustomValidity(error);
+ if(!event.target.reportValidity())return;
+ const value=id=>document.querySelector(id).value.trim();
+ const preferred=label(dateInput.value)+' at '+clock.value+' (Queensland AEST)';
+ document.querySelector('#booking-time').value=preferred;
+ const body=`Name: ${value('#booking-name')}\nEmail: ${value('#booking-email')}\nSession: ${value('#booking-service')}\nRequested time: ${preferred}\n\n${value('#booking-note')}\n\nI understand this is a request only. My appointment is not booked until Penny personally confirms it.`;
+ window.location.href='mailto:heartarahealing@gmail.com?subject='+encodeURIComponent('Heartara appointment request')+'&body='+encodeURIComponent(body);
+ document.querySelector('#booking-status').textContent='Your email app will open. Please review and send your request there. If it does not open, email heartarahealing@gmail.com directly. No appointment has been booked. Penny will reply to confirm availability or arrange another time.';
 });

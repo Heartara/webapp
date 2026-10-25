@@ -24,3 +24,23 @@
 .offering-photo img{display:block;width:100%;height:100%;object-fit:contain;border-radius:4px;filter:none}
 .offerings .cards article{box-shadow:0 8px 24px #65394e0b}
 @media(max-width:760px){.offerings .line-symbol.offering-photo{height:230px;max-width:300px;margin:20px auto 25px;width:100%}}
+
+
+/* The photograph fills the arch; the border follows the same edge. */
+.offerings .line-symbol.offering-photo{height:250px;padding:0;border:2px solid #d3adb9;border-radius:50% 50% 6px 6px / 42% 42% 6px 6px;background:none;overflow:hidden}
+.offerings .offering-photo img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:0}
+.offerings .cards article:nth-child(1) .offering-photo img{object-position:center 60%}
+.offerings .cards article:nth-child(2) .offering-photo img{object-position:center 45%}
+.offerings .cards article:nth-child(3) .offering-photo img{object-position:center 28%}
+.booking-calendar{margin:30px 0;padding:22px;border:1px solid var(--line);border-radius:12px;background:#fff8fa}
+.calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.calendar-toolbar h3{font-size:23px;margin:0}.calendar-toolbar button{border:1px solid var(--line);border-radius:50%;width:40px;height:40px;background:var(--cream);color:var(--ink);cursor:pointer}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.calendar-weekday{text-align:center;font-size:11px;padding:8px 0}
+.calendar-day{border:1px solid var(--line);border-radius:6px;background:#f0e9df;color:var(--ink);min-height:65px;padding:6px 2px;cursor:pointer;font:inherit}
+.calendar-day.evening{background:#f3dce6}.calendar-day span{display:block;font-size:9px;line-height:1.4}
+.calendar-day[aria-pressed=true]{background:var(--ink);color:white;outline:2px solid #a56a80;outline-offset:1px}
+.calendar-day:disabled{background:#f5f1f0;color:#a99c9f;cursor:default;opacity:.6}
+.calendar-legend{font-size:12px;line-height:1.7}.calendar-note{padding:16px;background:var(--sage);border-radius:5px}
+.booking-times{display:grid;grid-template-columns:1fr 1fr;gap:16px}.feedback-box .consent input{width:18px}
+@media(max-width:480px){.booking-calendar{padding:12px}.calendar-grid{gap:3px}.calendar-day{min-height:58px}.calendar-day span{font-size:8px}.booking-times{grid-template-columns:1fr}}
