@@ -54,7 +54,7 @@ document.querySelectorAll('footer').forEach(footer=>{
 
 // Refresh the shared design when a browser has retained an older stylesheet.
 const themeLink=document.querySelector('link[rel="stylesheet"][href^="styles.css"]');
-if(themeLink){themeLink.href='styles.css?v=blush-botanicals-20261025';}
+if(themeLink){themeLink.href='styles.css?v=larger-logo-20261025';}
 
 // Make the full disclaimer and client rights available from every page.
 document.querySelectorAll('footer').forEach(footer=>{
