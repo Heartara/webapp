@@ -1,0 +1,284 @@
+{
+  "assets/heartara-logo.jpeg": {
+    "width": 2048,
+    "height": 2048,
+    "variants": [
+      {
+        "src": "assets/heartara-logo-opt-320.webp",
+        "width": 320,
+        "height": 320,
+        "bytes": 6444
+      },
+      {
+        "src": "assets/heartara-logo-opt-640.webp",
+        "width": 640,
+        "height": 640,
+        "bytes": 15926
+      },
+      {
+        "src": "assets/heartara-logo-opt-960.webp",
+        "width": 960,
+        "height": 960,
+        "bytes": 26754
+      }
+    ]
+  },
+  "assets/oracle-card-back-web.webp": {
+    "width": 640,
+    "height": 906,
+    "variants": [
+      {
+        "src": "assets/oracle-card-back-web-opt-320.webp",
+        "width": 320,
+        "height": 453,
+        "bytes": 34684
+      },
+      {
+        "src": "assets/oracle-card-back-web-opt-640.webp",
+        "width": 640,
+        "height": 906,
+        "bytes": 113034
+      }
+    ]
+  },
+  "assets/penny-despacho.jpg": {
+    "width": 1536,
+    "height": 2048,
+    "variants": [
+      {
+        "src": "assets/penny-despacho-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 35244
+      },
+      {
+        "src": "assets/penny-despacho-opt-640.webp",
+        "width": 640,
+        "height": 853,
+        "bytes": 113174
+      },
+      {
+        "src": "assets/penny-despacho-opt-960.webp",
+        "width": 960,
+        "height": 1280,
+        "bytes": 210710
+      }
+    ]
+  },
+  "assets/penny-forest.jpg": {
+    "width": 953,
+    "height": 960,
+    "variants": [
+      {
+        "src": "assets/penny-forest-opt-320.webp",
+        "width": 320,
+        "height": 322,
+        "bytes": 23220
+      },
+      {
+        "src": "assets/penny-forest-opt-640.webp",
+        "width": 640,
+        "height": 645,
+        "bytes": 64824
+      },
+      {
+        "src": "assets/penny-forest-opt-953.webp",
+        "width": 953,
+        "height": 960,
+        "bytes": 114214
+      }
+    ]
+  },
+  "assets/peru-1.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-1-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 37152
+      },
+      {
+        "src": "assets/peru-1-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 94808
+      }
+    ]
+  },
+  "assets/peru-2.webp": {
+    "width": 700,
+    "height": 596,
+    "variants": [
+      {
+        "src": "assets/peru-2-opt-320.webp",
+        "width": 320,
+        "height": 272,
+        "bytes": 7122
+      },
+      {
+        "src": "assets/peru-2-opt-640.webp",
+        "width": 640,
+        "height": 545,
+        "bytes": 20046
+      },
+      {
+        "src": "assets/peru-2-opt-700.webp",
+        "width": 700,
+        "height": 596,
+        "bytes": 24584
+      }
+    ]
+  },
+  "assets/peru-3.webp": {
+    "width": 328,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-3-opt-320.webp",
+        "width": 320,
+        "height": 683,
+        "bytes": 25206
+      },
+      {
+        "src": "assets/peru-3-opt-328.webp",
+        "width": 328,
+        "height": 700,
+        "bytes": 27182
+      }
+    ]
+  },
+  "assets/peru-4.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-4-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 29132
+      },
+      {
+        "src": "assets/peru-4-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 70108
+      }
+    ]
+  },
+  "assets/peru-5.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-5-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 14306
+      },
+      {
+        "src": "assets/peru-5-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 35190
+      }
+    ]
+  },
+  "assets/peru-6.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-6-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 47668
+      },
+      {
+        "src": "assets/peru-6-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 122766
+      }
+    ]
+  },
+  "assets/peru-7.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-7-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 31978
+      },
+      {
+        "src": "assets/peru-7-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 79720
+      }
+    ]
+  },
+  "assets/peru-8.webp": {
+    "width": 525,
+    "height": 700,
+    "variants": [
+      {
+        "src": "assets/peru-8-opt-320.webp",
+        "width": 320,
+        "height": 427,
+        "bytes": 29410
+      },
+      {
+        "src": "assets/peru-8-opt-525.webp",
+        "width": 525,
+        "height": 700,
+        "bytes": 71680
+      }
+    ]
+  },
+  "assets/reiki-attunements.jpg": {
+    "width": 2048,
+    "height": 1536,
+    "variants": [
+      {
+        "src": "assets/reiki-attunements-opt-320.webp",
+        "width": 320,
+        "height": 240,
+        "bytes": 16318
+      },
+      {
+        "src": "assets/reiki-attunements-opt-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 54166
+      },
+      {
+        "src": "assets/reiki-attunements-opt-960.webp",
+        "width": 960,
+        "height": 720,
+        "bytes": 114206
+      }
+    ]
+  },
+  "assets/return-to-your-heart-front-web.webp": {
+    "width": 640,
+    "height": 897,
+    "variants": [
+      {
+        "src": "assets/return-to-your-heart-front-web-opt-320.webp",
+        "width": 320,
+        "height": 448,
+        "bytes": 36358
+      },
+      {
+        "src": "assets/return-to-your-heart-front-web-opt-640.webp",
+        "width": 640,
+        "height": 897,
+        "bytes": 98774
+      }
+    ]
+  }
+}

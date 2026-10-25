@@ -60,15 +60,8 @@ fetch('availability.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();re
   link.addEventListener('click',()=>{[year,month]=key.split('-').map(Number);month--;selectDate(key);clock.value=time;});row.append(link);slots.append(row);
  });
 }).catch(()=>{slots.textContent='Additional appointment information could not be loaded. You can still request your preferred date using the calendar.';});
+
 document.querySelector('#booking-form').addEventListener('submit',event=>{
- event.preventDefault();
- const error=requestError(dateInput.value,clock.value);
- clock.setCustomValidity(error);
- if(!event.target.reportValidity())return;
- const value=id=>document.querySelector(id).value.trim();
- const preferred=label(dateInput.value)+' at '+clock.value+' (Queensland AEST)';
- document.querySelector('#booking-time').value=preferred;
- const body=`Name: ${value('#booking-name')}\nEmail: ${value('#booking-email')}\nSession: ${serviceSelect.selectedOptions[0].textContent}\nRequested time: ${preferred}\n\n${value('#booking-note')}\n\nI understand this is a request only. My appointment is not booked until Penny personally confirms it.`;
- window.location.href='mailto:heartarahealing@gmail.com?subject='+encodeURIComponent('Heartara appointment request')+'&body='+encodeURIComponent(body);
- document.querySelector('#booking-status').textContent='Your email app will open. Please review and send your request there. If it does not open, email heartarahealing@gmail.com directly. No appointment has been booked. Penny will reply to confirm availability or arrange another time.';
+ const error=requestError(dateInput.value,clock.value);clock.setCustomValidity(error);
+ if(!event.target.reportValidity()){event.preventDefault();event.stopImmediatePropagation();return;}
 });

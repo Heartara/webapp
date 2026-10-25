@@ -1,5 +1,5 @@
 const grid=document.querySelector('#published-reviews');
-fetch('reviews.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(reviews=>{
+Promise.resolve([...grid.querySelectorAll('.review')].map(node=>({text:node.querySelector('blockquote p').textContent.replace(/^“|”$/g,''),name:node.querySelector('figcaption').textContent,year:''}))).then(reviews=>{
  if(!Array.isArray(reviews)||!reviews.length){grid.textContent='More experiences will be shared here soon.';return;}
  grid.removeAttribute('aria-live');grid.style.display='grid';grid.style.gridTemplateColumns='minmax(0,1fr)';
  grid.setAttribute('role','region');grid.setAttribute('aria-label','Client experiences');
@@ -38,4 +38,3 @@ fetch('reviews.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return 
  document.addEventListener('visibilitychange',schedule);
  show(0);schedule();
 }).catch(()=>{grid.textContent='Reviews could not load. Please refresh or contact Penny directly.';});
-document.querySelector('#feedback-form').addEventListener('submit',event=>{event.preventDefault();if(!event.target.reportValidity())return;const name=document.querySelector('#feedback-name').value.trim();const text=document.querySelector('#feedback-text').value.trim();if(!name||!text)return;const body=`Name to display: ${name}\n\nMy experience:\n${text}\n\nI agree that Penny may publish this feedback and my display name on the Heartara website.`;window.location.href='mailto:heartarahealing@gmail.com?subject='+encodeURIComponent('Heartara website feedback')+'&body='+encodeURIComponent(body);document.querySelector('#feedback-status').textContent='Your email app should open. Please press Send there to submit your feedback. If it does not open, email heartarahealing@gmail.com directly.';});

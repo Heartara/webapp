@@ -1,1 +1,16 @@
-{"name":"heartara-webapp","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"},"engines":{"node":">=22"}}
+{
+  "name": "heartara-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node server.js",
+    "test": "node --test booking-rules.test.js tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
