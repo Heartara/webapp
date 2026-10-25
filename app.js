@@ -63,3 +63,13 @@ document.querySelectorAll('footer').forEach(footer=>{
  const paragraph=document.createElement('p');const link=document.createElement('a');
  link.href='disclaimer.html';link.textContent='Disclaimer, privacy & client rights';link.style.textDecoration='underline';paragraph.append(link);footer.append(paragraph);
 });
+
+// Frame the original artwork closely, including browsers without object-view-box support.
+document.querySelectorAll('.logo-brand img').forEach(img=>{
+ if(img.parentElement.classList.contains('logo-mark'))return;
+ const frame=document.createElement('span');frame.className='logo-mark';
+ frame.style.cssText='display:block;overflow:hidden;border-radius:50%;flex-shrink:0;line-height:0;';
+ img.before(frame);frame.append(img);
+ img.style.objectViewBox='none';img.style.objectFit='contain';
+ img.style.borderRadius='0';img.style.transform='scale(1.56)';
+});
