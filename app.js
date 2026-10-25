@@ -17,3 +17,16 @@ const ritesLink=document.querySelector('.offerings a[href="offerings.html#munay-
 if(ritesLink){ritesLink.href='munay-ki.html';ritesLink.previousElementSibling.textContent='All nine rites: $450 for an individual journey, or $300 per person in a group of three. Explore sacred space, ceremony and my Peru journey.';}
 const availability=document.querySelector('.offerings .availability');
 if(availability){availability.textContent='In-person and distance Reiki · Three-session packages from AUD $280. Weekends, Mondays and selected weekday evenings after 5 pm. ';const link=document.createElement('a');link.href='booking.html';link.textContent='Request a booking →';availability.append(link);}
+
+
+// Penny's own photographs bring each offering to life.
+const offeringPhotos = [
+  {src:'assets/peru-1.webp', alt:'Penny beside a waterfall, surrounded by green forest'},
+  {src:'assets/peru-6.webp', alt:'Penny taking part in a ceremony beside a tree in Peru'},
+  {src:'assets/peru-3.webp', alt:'Penny standing beside the warm glow of a sacred fire'}
+];
+document.querySelectorAll('.offerings .line-symbol').forEach((frame,index)=>{
+  const photo=offeringPhotos[index];if(!photo)return;
+  const img=document.createElement('img');img.src=photo.src;img.alt=photo.alt;img.loading='lazy';img.decoding='async';
+  frame.classList.add('offering-photo');frame.replaceChildren(img);
+});
