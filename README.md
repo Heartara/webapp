@@ -30,3 +30,15 @@ New pages: `offerings.html` (Reiki, Munay Ki and despacho), `group-healing.html`
 ## Managing reviews
 
 Visitors can write feedback in the homepage form, which prepares an email to Penny. They must send that email from their own email application. No submission is automatically published or stored on the website. After reviewing the feedback and its publication permission, open `manage-reviews.html` to add it to the local approved list. Remove entries there when needed, download `reviews.json`, and upload the file to the repository root through the linked GitHub upload screen. Commit to main to publish changes. The editor itself is public and has no power to publish without repository authentication. There is no server inbox, automatic spam filter or private admin backend. The Facebook review URL remains pending.
+
+## Appointment availability
+
+The booking page reads `availability.json`. Publish actual released appointments by editing that file at https://github.com/Heartara/webapp/edit/main/availability.json and committing the change. Use an array such as:
+
+```json
+[{"start":"2026-11-02T10:00:00+10:00","type":"60-minute Reiki · in person or distance"}]
+```
+
+This is an example format, not an available appointment. Remove a slot when no longer available. Past dates disappear automatically. Booking requests open the visitor's email app and require Penny's confirmation; there is no automatic reservation or payment. An empty array displays a contact prompt.
+
+Pricing added 25 October: existing $100/60m and $120/90m single rates retained. Packages $280/3x60m and $340/3x90m; distance $100/60m including check-ins. Rites $450 individual or $300 per person for the complete small-group journey.
