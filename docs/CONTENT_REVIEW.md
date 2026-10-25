@@ -40,3 +40,6 @@ The journal has no fabricated articles. It reads posts.json. write.html is a pub
 ## Original image assets received
 
 The uploaded Heartara Web Images.zip supplied the official Heartara logo, Penny’s forest portrait and her despacho photograph. These originals are now installed under assets/, with the logo in the shared header/footer, forest photo on the homepage and biography, and despacho photo in the homepage introduction and despacho section. Original colours and image bytes are preserved; responsive CSS controls display size. This resolves the earlier file-access limitation for those three images. The condor photo and actual oracle card artwork remain outstanding and are not in this archive.
+
+
+Penny has identified her December 2025 initiation as Munay Karpay. The biography now includes a brief, general explanation of love and initiation in an Andean spiritual context, without claiming a specific lineage, universal ritual format or authority to teach this initiation. It remains distinct from the one-to-one Munay Ki offering and from despacho training.
