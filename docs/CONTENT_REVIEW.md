@@ -43,3 +43,8 @@ The uploaded Heartara Web Images.zip supplied the official Heartara logo, Pennyâ
 
 
 Penny has identified her December 2025 initiation as Munay Karpay. The biography now includes a brief, general explanation of love and initiation in an Andean spiritual context, without claiming a specific lineage, universal ritual format or authority to teach this initiation. It remains distinct from the one-to-one Munay Ki offering and from despacho training.
+
+
+## Final card front and back received
+
+Return_to_Your_Heart_Card_and_Back.zip supplied Return_to_Your_Heart.png and Card_Back.png. Both original PNGs are installed unchanged and now appear beside the homepage oracle description and on the dedicated oracle page. Placeholder card illustrations and their concept labels have been replaced. Each image links to the full artwork. The previous full-deck archive exceeded the 32 MiB transfer limit; this smaller two-image archive downloaded successfully. The remaining 45 card faces and condor photograph have not been installed.
