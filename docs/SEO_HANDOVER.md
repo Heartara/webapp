@@ -29,7 +29,7 @@ Organization is supported by the visible Heartara identity, Penny's name, suppli
 
 LocalBusiness rich-result markup is deferred because the public physical address/details are not confirmed for publication; Penny shares her home address only after confirmation. Product rich-result markup is deferred because there is no confirmed offer price/availability or eligible product review data. Event markup is deferred because no individually scheduled public event has approved date/venue information. FAQ text is for people; no FAQ rich-result claim is made.
 
-These are local structural/schema-contract checks against current official guidance, **not a Google eligibility certification**. The live Google Rich Results Test and Search Console checks remain post-deployment tasks.
+These are local structural/schema-contract checks against current official guidance, **not a Google eligibility certification**. Google’s live Rich Results Test has now detected one valid Organization item on the homepage and one valid Breadcrumbs item on the Reiki training page. Search Console monitoring and any later template/content changes still need follow-up checks.
 
 ## Verification performed
 
@@ -75,3 +75,16 @@ Follow DEPLOYMENT.md for Node hosting with persistent disk, secret manager, veri
 - https://support.google.com/business/answer/7091
 
 Technical implementation references: Node.js SQLite API; Resend send-email and idempotency documentation; Cloudflare Turnstile server-side validation documentation. Search appearance, indexing, rankings and rich results are not guaranteed.
+
+## Live publication verification
+
+Published implementation commit: `95b292072c597ffc588308fe75730b21d437ebfe`. GitHub Pages deployment and the Heartara checks workflow both succeeded.
+
+All 13 public canonical pages returned HTTP 200 with the expected absolute canonical and `index, follow` directive. The live sitemap and project-path robots file returned 200. A deliberately missing page returned 404. The unhosted CRM endpoint `/webapp/api/form-token` returned 404 on GitHub Pages, as expected; live submission activation remains blocked, not silently substituted.
+
+Google Rich Results Test, 26 October 2026:
+
+- Home: one valid Organization item. Result: https://search.google.com/test/rich-results/result?id=4G16keuiKL-Jd0RBnXiPpA
+- Reiki training: one valid Breadcrumbs item. Result: https://search.google.com/test/rich-results/result?id=GyJjBpxEZGNDQizzyh0Euw
+
+Live desktop visual verification confirmed the established blush/botanical design, blended logo, navigation and new Reiki training page. Google test results describe the inspected version, not a guarantee of indexing, rankings or rich-result display.
