@@ -44,3 +44,7 @@
 .calendar-legend{font-size:12px;line-height:1.7}.calendar-note{padding:16px;background:var(--sage);border-radius:5px}
 .booking-times{display:grid;grid-template-columns:1fr 1fr;gap:16px}.feedback-box .consent input{width:18px}
 @media(max-width:480px){.booking-calendar{padding:12px}.calendar-grid{gap:3px}.calendar-day{min-height:58px}.calendar-day span{font-size:8px}.booking-times{grid-template-columns:1fr}}
+
+/* Keep Penny's face and the fire visible together inside the arch. */
+.offerings .cards article:nth-child(3) .offering-photo{background:#111b18}
+.offerings .cards article:nth-child(3) .offering-photo img{object-fit:contain!important;object-position:center center}
