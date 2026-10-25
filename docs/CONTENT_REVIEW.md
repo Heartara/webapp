@@ -52,3 +52,8 @@ Return_to_Your_Heart_Card_and_Back.zip supplied Return_to_Your_Heart.png and Car
 ## Homepage card presentation
 
 The homepage uses a compact overlapping composition, with the Return to Your Heart face above the card back. Separate 640-pixel-wide WebP derivatives reduce download size; original PNGs remain unchanged for the oracle page. Homepage cards no longer link to the original full-resolution files. Derivatives were created at Penny’s explicit request to resize the homepage artwork.
+
+
+## Client reviews
+
+Penny supplied two Facebook reviews for inclusion. They are reproduced as provided, with Emma credited for the 2021 distance Reiki review. The second has no attribution pending Penny’s confirmation; no identity or date was invented. A homepage link leads to the reviews section. The direct Facebook reviews URL and remaining two reviews are pending.
