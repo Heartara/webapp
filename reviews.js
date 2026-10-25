@@ -27,7 +27,7 @@ fetch('reviews.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return 
  const schedule=()=>{
   clearInterval(timer);timer=null;pause.textContent=paused?'Play rotation':'Pause rotation';
   pause.setAttribute('aria-label',paused?'Play automatic review rotation':'Pause automatic review rotation');
-  if(!paused&&!hovering&&!document.hidden)timer=setInterval(()=>show(index+1),25000);
+  if(!paused&&!hovering&&!document.hidden)timer=setInterval(()=>show(index+1),10000);
  };
  previous.addEventListener('click',()=>{paused=true;show(index-1,true);schedule();});
  next.addEventListener('click',()=>{paused=true;show(index+1,true);schedule();});
