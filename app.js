@@ -55,3 +55,11 @@ document.querySelectorAll('footer').forEach(footer=>{
 // Refresh the shared design when a browser has retained an older stylesheet.
 const themeLink=document.querySelector('link[rel="stylesheet"][href^="styles.css"]');
 if(themeLink){themeLink.href='styles.css?v=blush-botanicals-20261025';}
+
+// Make the full disclaimer and client rights available from every page.
+document.querySelectorAll('footer').forEach(footer=>{
+ const summary=footer.querySelector('small');
+ if(summary)summary.textContent='Heartara offers complementary wellbeing and spiritual practices. These do not replace medical or mental health care. Individual experiences vary; no particular outcome is guaranteed. Your Australian Consumer Law rights are preserved.';
+ const paragraph=document.createElement('p');const link=document.createElement('a');
+ link.href='disclaimer.html';link.textContent='Disclaimer, privacy & client rights';link.style.textDecoration='underline';paragraph.append(link);footer.append(paragraph);
+});
