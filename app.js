@@ -21,7 +21,7 @@ if(availability){availability.textContent='In-person and distance Reiki · Three
 
 // Penny's own photographs bring each offering to life.
 const offeringPhotos = [
-  {src:'assets/peru-1.webp', alt:'Penny beside a waterfall, surrounded by green forest'},
+  {src:'assets/reiki-attunements.jpg', alt:'Penny with three Reiki participants holding their certificates'},
   {src:'assets/peru-6.webp', alt:'Penny taking part in a ceremony beside a tree in Peru'},
   {src:'assets/peru-3.webp', alt:'Penny standing beside the warm glow of a sacred fire'}
 ];
@@ -69,6 +69,7 @@ document.querySelectorAll('.logo-brand img').forEach(img=>{
  if(img.parentElement.classList.contains('logo-mark'))return;
  const frame=document.createElement('span');frame.className='logo-mark';
  frame.style.cssText='display:block;max-width:none;overflow:hidden;border-radius:50%;flex-shrink:0;line-height:0;';
+ frame.style.mixBlendMode='multiply';
  img.before(frame);frame.append(img);
  img.style.objectViewBox='none';img.style.objectFit='contain';
  img.style.borderRadius='0';img.style.transform='scale(1.56)';
