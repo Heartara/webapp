@@ -48,3 +48,7 @@ Penny has identified her December 2025 initiation as Munay Karpay. The biography
 ## Final card front and back received
 
 Return_to_Your_Heart_Card_and_Back.zip supplied Return_to_Your_Heart.png and Card_Back.png. Both original PNGs are installed unchanged and now appear beside the homepage oracle description and on the dedicated oracle page. Placeholder card illustrations and their concept labels have been replaced. Each image links to the full artwork. The previous full-deck archive exceeded the 32 MiB transfer limit; this smaller two-image archive downloaded successfully. The remaining 45 card faces and condor photograph have not been installed.
+
+## Homepage card presentation
+
+The homepage uses a compact overlapping composition, with the Return to Your Heart face above the card back. Separate 640-pixel-wide WebP derivatives reduce download size; original PNGs remain unchanged for the oracle page. Homepage cards no longer link to the original full-resolution files. Derivatives were created at Penny’s explicit request to resize the homepage artwork.
