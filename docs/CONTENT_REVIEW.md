@@ -28,3 +28,11 @@ The document is a useful consolidated brief, but explicitly has incomplete histo
 8. Review final accessibility, remove draft labels and noindex only when approved for launch.
 
 The two-page draft combines the proposed information architecture into a coherent initial experience rather than creating empty journal, gallery or booking pages.
+
+## Penny’s revision — 25 October 2026
+
+The latest direct instructions supersede the reference where they differ: rose/pink homepage, Return to your heart wording, 60-minute Reiki AUD $100 and 90-minute Reiki AUD $120 including oracle reading and tuning forks. One-to-one Munay Ki pacing is guided individually. Peru travel, personal initiations including Karen in December 2025, and despacho training are now included based on Penny’s direct statements; no specific Peruvian locations, teachers or lineage claims were invented. The group page retains the reference’s nine-stage flow and Heart Blessing name, while using Penny’s current Return to Your Heart group title.
+
+Outstanding asset limitation: logo, ceremony portrait and forest portrait are visible inline in the conversation, but no file handles or downloadable originals were supplied to the workspace. They have not been recreated or represented as installed. Condor and actual oracle artwork were referenced from another chat and are not available here. Request original file attachments and place approved files under assets before switching the illustrative draft visuals. Official colours remain unverified. This is an explicit remaining task, not a completed gallery.
+
+The journal has no fabricated articles. It reads posts.json. write.html is a public local-draft editor: it can save in browser storage and export a complete updated posts.json file; it cannot publish without a separate authenticated GitHub upload/commit. No authentication secrets are used in the browser.
