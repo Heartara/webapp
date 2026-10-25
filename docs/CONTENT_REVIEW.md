@@ -57,3 +57,5 @@ The homepage uses a compact overlapping composition, with the Return to Your Hea
 ## Client reviews
 
 Penny supplied two Facebook reviews for inclusion. They are reproduced as provided, with Emma credited for the 2021 distance Reiki review. The second has no attribution pending Penny’s confirmation; no identity or date was invented. A homepage link leads to the reviews section. The direct Facebook reviews URL and remaining two reviews are pending.
+
+Liz (2021) and Sharon (2021) were added from Penny’s next message. The earlier second review still has no confirmed attribution. Feedback is moderated through Penny’s email; the form explicitly requires publication permission and explains the email-app send step. Approved reviews are loaded from reviews.json. The management page supports local additions/removals and file export; only an authenticated GitHub upload/commit publishes those changes. Removal here concerns the website’s displayed copies, not the original Facebook reviews.
