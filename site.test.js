@@ -17,7 +17,7 @@ test('all internal page and fragment links resolve', async () => {
   for (const [,href] of html.matchAll(/href="([^\"]+)"/g)) {
    if (/^(mailto:|https:)/.test(href)) continue;
    const [target,fragment] = href.split('#');
-   const content = await readFile(new URL(target || file, import.meta.url),'utf8');
+   const content = await readFile(new URL((target || file).split('?')[0], import.meta.url),'utf8');
    if (fragment) assert.ok(content.includes(`id="${fragment}"`), `${file}: ${href}`);
   }
  }
