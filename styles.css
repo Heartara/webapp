@@ -48,3 +48,7 @@
 /* Keep Penny's face and the fire visible together inside the arch. */
 .offerings .cards article:nth-child(3) .offering-photo{background:#111b18}
 .offerings .cards article:nth-child(3) .offering-photo img{object-fit:contain!important;object-position:center center}
+
+/* Fit the portrait fire image to a narrower arch, keeping face and flames in view. */
+.offerings .cards article:nth-child(3) .line-symbol.offering-photo{width:180px;max-width:100%;height:250px;margin-left:auto;margin-right:auto;background:none}
+.offerings .cards article:nth-child(3) .offering-photo img{object-fit:cover!important;object-position:center top}
