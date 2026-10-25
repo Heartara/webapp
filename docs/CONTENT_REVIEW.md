@@ -36,3 +36,7 @@ The latest direct instructions supersede the reference where they differ: rose/p
 Outstanding asset limitation: logo, ceremony portrait and forest portrait are visible inline in the conversation, but no file handles or downloadable originals were supplied to the workspace. They have not been recreated or represented as installed. Condor and actual oracle artwork were referenced from another chat and are not available here. Request original file attachments and place approved files under assets before switching the illustrative draft visuals. Official colours remain unverified. This is an explicit remaining task, not a completed gallery.
 
 The journal has no fabricated articles. It reads posts.json. write.html is a public local-draft editor: it can save in browser storage and export a complete updated posts.json file; it cannot publish without a separate authenticated GitHub upload/commit. No authentication secrets are used in the browser.
+
+## Original image assets received
+
+The uploaded Heartara Web Images.zip supplied the official Heartara logo, Penny’s forest portrait and her despacho photograph. These originals are now installed under assets/, with the logo in the shared header/footer, forest photo on the homepage and biography, and despacho photo in the homepage introduction and despacho section. Original colours and image bytes are preserved; responsive CSS controls display size. This resolves the earlier file-access limitation for those three images. The condor photo and actual oracle card artwork remain outstanding and are not in this archive.
