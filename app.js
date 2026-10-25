@@ -5,3 +5,15 @@ navigation?.addEventListener('click', event => { if (event.target.closest('a')) 
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') { menu.setAttribute('aria-expanded', 'false'); navigation.classList.remove('open'); menu.focus(); } });
 const search = document.querySelector('#card-search');
 search?.addEventListener('input', () => { const query = search.value.trim().toLowerCase(); let count = 0; document.querySelectorAll('[data-card]').forEach(card => { card.hidden = !card.dataset.card.includes(query); if (!card.hidden) count++; }); document.querySelector('#card-count').textContent = query ? `${count} matching ${count === 1 ? 'card' : 'cards'}` : '44 main cards'; });
+
+// Keep the shared navigation current on existing pages as well as the new ones.
+if(navigation && !navigation.querySelector('a[href="munay-ki.html"]')) {
+  const link=document.createElement('a');link.href='munay-ki.html';link.textContent='Munay Ki';
+  navigation.insertBefore(link,navigation.querySelector('.button'));
+}
+const bookingLink=navigation?.querySelector('.button');
+if(bookingLink){bookingLink.href='booking.html';bookingLink.textContent='Book a session ↗';}
+const ritesLink=document.querySelector('.offerings a[href="offerings.html#munay-ki"]');
+if(ritesLink){ritesLink.href='munay-ki.html';ritesLink.previousElementSibling.textContent='All nine rites: $450 for an individual journey, or $300 per person in a group of three. Explore sacred space, ceremony and my Peru journey.';}
+const availability=document.querySelector('.offerings .availability');
+if(availability){availability.textContent='In-person and distance Reiki · Three-session packages from AUD $280. Weekends, Mondays and selected weekday evenings after 5 pm. ';const link=document.createElement('a');link.href='booking.html';link.textContent='Request a booking →';availability.append(link);}
