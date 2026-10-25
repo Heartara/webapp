@@ -30,3 +30,12 @@ document.querySelectorAll('.offerings .line-symbol').forEach((frame,index)=>{
   const img=document.createElement('img');img.src=photo.src;img.alt=photo.alt;img.loading='lazy';img.decoding='async';
   frame.classList.add('offering-photo');frame.replaceChildren(img);
 });
+
+
+// A clear contact route on every page, with email kept on the contact page.
+if(navigation && !navigation.querySelector('a[href="contact.html"]')){
+ const link=document.createElement('a');link.href='contact.html';link.textContent='Contact';navigation.insertBefore(link,navigation.querySelector('.button'));
+}
+if(!location.pathname.endsWith('/contact.html')){
+ document.querySelectorAll('footer a[href^="mailto:"]').forEach(link=>{link.href='contact.html';});
+}
