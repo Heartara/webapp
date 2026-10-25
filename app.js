@@ -39,3 +39,15 @@ if(navigation && !navigation.querySelector('a[href="contact.html"]')){
 if(!location.pathname.endsWith('/contact.html')){
  document.querySelectorAll('footer a[href^="mailto:"]').forEach(link=>{link.href='contact.html';});
 }
+
+// Connect visitors with Penny's Heartara Facebook community.
+const facebookGroup='https://www.facebook.com/groups/heartara';
+document.querySelectorAll('footer').forEach(footer=>{
+  if(footer.querySelector('a[href="'+facebookGroup+'"]'))return;
+  const paragraph=document.createElement('p');
+  const link=document.createElement('a');
+  link.href=facebookGroup;link.target='_blank';link.rel='noopener noreferrer';
+  link.textContent='Join the Heartara Facebook group ↗';
+  link.style.textDecoration='underline';
+  paragraph.append(link);footer.append(paragraph);
+});
