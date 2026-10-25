@@ -1,4 +1,4 @@
-import {queenslandDate,weekday,requestError} from './booking-rules.js';
+import {queenslandDate,weekday,requestError} from './booking-rules.js?v=weekend-hours';
 const calendar=document.querySelector('#booking-calendar');
 const dateInput=document.querySelector('#booking-date');
 const clock=document.querySelector('#booking-clock');
@@ -10,10 +10,11 @@ dateInput.min=today;
 const label=key=>new Intl.DateTimeFormat('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(key+'T00:00:00Z'));
 function selectDate(key){
  dateInput.value=key;
- const day=weekday(key),evening=day>=2&&day<=5;
- clock.min=evening?'17:00':'';
+ const day=weekday(key),evening=day>=2&&day<=5,weekend=day===0||day===6;
+ clock.min=weekend?'09:00':evening?'17:00':'';
+ clock.max=weekend?'17:00':'';
  clock.setCustomValidity('');
- guidance.textContent=evening?'Tuesday to Friday: request an evening time from 5 pm (Queensland).':'Monday or weekend: enter your preferred time (Queensland).';
+ guidance.textContent=evening?'Tuesday to Friday: request an evening time from 5 pm (Queensland).':weekend?'Saturday and Sunday: choose a preferred time between 9 am and 5 pm (Queensland). Penny will get back in touch to confirm.':'Monday: enter your preferred time (Queensland).';
  selection.textContent=label(key)+' selected. Choose a preferred time below. Penny will personally confirm whether she is available.';
  render();
 }
@@ -27,11 +28,11 @@ function render(){
  const days=new Date(Date.UTC(year,month+1,0)).getUTCDate();
  for(let day=1;day<=days;day++){
   const key=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  const dow=weekday(key),evening=dow>=2&&dow<=5,past=key<queenslandDate();
+  const dow=weekday(key),evening=dow>=2&&dow<=5,weekend=dow===0||dow===6,past=key<queenslandDate();
   const button=document.createElement('button');button.type='button';button.className='calendar-day'+(evening?' evening':'');button.disabled=past;
   button.textContent=day;button.setAttribute('aria-pressed',String(dateInput.value===key));
-  button.setAttribute('aria-label',label(key)+(past?' — past date':evening?' — request from 5 pm, subject to confirmation':' — request a time, subject to confirmation'));
-  const note=document.createElement('span');note.textContent=past?'Past':evening?'From 5 pm':'By request';button.append(note);
+  button.setAttribute('aria-label',label(key)+(past?' — past date':weekend?' — request between 9 am and 5 pm, subject to confirmation':evening?' — request from 5 pm, subject to confirmation':' — request a time, subject to confirmation'));
+  const note=document.createElement('span');note.textContent=past?'Past':weekend?'9 am–5 pm':evening?'From 5 pm':'By request';button.append(note);
   button.addEventListener('click',()=>{selectDate(key);clock.focus();});calendar.append(button);
  }
 }

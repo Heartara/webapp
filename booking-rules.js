@@ -14,5 +14,6 @@ export function requestError(date, time, now = new Date()) {
   if(day===null || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return 'Please choose a valid date and time.';
   if(new Date(`${date}T${time}:00+10:00`)<=now) return 'Please choose a future date and time in Queensland.';
   if(day>=2 && day<=5 && time<'17:00') return 'Tuesday to Friday appointments can be requested from 5 pm. Please choose an evening time.';
+  if((day===0 || day===6) && (time<'09:00' || time>'17:00')) return 'Weekend appointment requests are between 9 am and 5 pm (Queensland). Please choose a time within these hours.';
   return '';
 }
