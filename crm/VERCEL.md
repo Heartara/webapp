@@ -101,3 +101,7 @@ In the newest CRM deployment, open Settings → Email notifications. The page sh
 ## Visitor confirmation emails
 
 Reply-based visitor confirmation is a separate optional integration. Penny’s alerts remain immediate. Follow [EMAIL-CONFIRMATION.md](EMAIL-CONFIRMATION.md) for the incremental SQL upgrade, receiving subdomain, receiving API key and signed webhook setup. It remains disabled until the owner activates it after setup. No real visitor confirmation emails were sent during development.
+
+## Client conversations inside the CRM
+
+See [CLIENT-EMAIL.md](CLIENT-EMAIL.md). Incremental migration `202610260005_client_email.sql` adds private conversation history and durable outbound messages. It reuses the configured Resend sender, receiving subdomain and signed webhook. No Gmail shortcut or automatic mailbox-history import is used. The app shows the missing database upgrade until it is installed.

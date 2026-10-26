@@ -1,0 +1,23 @@
+# Client email in Heartara CRM
+
+Penny can send emails repeatedly from an enquiry or contact file. Each message is saved before sending, with separate queued, provider-accepted, delivered, bounced or failed status. New client replies arrive in that conversation, appear on the linked contact file, and generate an immediate private alert for Penny. The enquiry moves to Waiting for client after the provider accepts an outgoing email and In progress when a client reply arrives. Neither state nor one-time email confirmation prevents another response.
+
+## Upgrade the existing live CRM
+
+1. Wait for the latest `crm/supabase-phase-one` Vercel production deployment to be Ready.
+2. Open `supabase/migrations/202610260005_client_email.sql` on GitHub and click **Copy raw file**. Paste the actual SQL into a new Supabase SQL Editor query and Run. Do not paste a Markdown link or rerun the full installer. This requires the previous CRM migrations, including 004, already installed.
+3. Keep the existing Resend sending/receiving keys, verified `reply.heartarahealing.com` receiving domain and signed webhook subscribed to `email.received`, `email.delivered`, `email.bounced`, `email.failed`. No new DNS or API key is required. A stable server-only EMAIL_CONFIRMATION_SECRET is recommended before future provider-key rotation, because conversation Reply-To addresses must remain stable.
+4. Open the live `/crm/` and an enquiry or contact. Under **Email conversation**, click **Write email**, enter a subject and message, then **Send email**. Refresh the conversation to see sending/delivery status. Send a second message to confirm the action stays available.
+5. Reply from the client mailbox to that email. Refresh the CRM; the reply should appear under the same conversation in both enquiry and linked contact. Penny’s owner alert uses the saved notification recipient. This is a live acceptance test: development used fake provider transport and synthetic clients only.
+
+The deployed app detects whether the upgrade exists and keeps existing enquiry/confirmation features usable if it has not been installed. Creating/merging a contact carries conversation history into its file. Standalone contact conversations are also supported. Owner-only access applies to sending and reading in this release.
+
+## What is tracked
+
+Messages sent through this feature and replies to their unique conversation address are stored privately in Supabase. Older email from another mailbox is not imported. Email conversation is separate from the confirmation-only reply address: replies to an old confirmation email still only verify email access. To continue a discussion, reply to Penny’s actual CRM email. New messages are plain text; rich formatting and attachments are not sent. Incoming attachment counts are shown, but attachments are not downloaded or stored. HTML-only incoming messages are converted to plain display text, and message text is rendered without executing HTML.
+
+Conversation history has older/newer pagination. Opening Write email never sends anything. The explicit Send email action queues the message. Repeated clicks/retries with the same draft reference reuse the same queued message; a deliberate new message gets a new reference. Outgoing email uses the existing durable worker, provider idempotency and signed delivery callbacks. An email service accepting a request is not proof of inbox delivery. A failed send does not discard the message or client enquiry; the existing Settings retry controls and notification scheduler apply. A conservative limit of 100 outgoing CRM messages per 24 hours prevents accidental bursts.
+
+Incoming email is fetched from Resend only after webhook signature verification. Sender, conversation token hash and active thread must match; duplicate received-email IDs are ignored. Incoming messages are bounded to 12,000 characters. Automatic responses are ignored when identified by Auto-Submitted headers; the app never sends automatic conversational responses. Replies from a different address are not attached automatically. New owner alerts contain only a CRM link/reference, not client message text.
+
+Reviewed erasure scrubs stored conversation bodies/subjects, removes the copied recipient and reply token, and cancels queued messages. It cannot recall mail already sent or delete provider-held email; handle provider retention separately. Changing the client’s email or conversation signing key requires review before sending against an existing thread; the system fails safely rather than silently redirecting it. Mail delivery recovery during quiet periods still needs the existing authenticated scheduler; otherwise the owner can process/retry queued mail in Settings.

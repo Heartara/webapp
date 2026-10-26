@@ -15,13 +15,18 @@ export function replyAddress(id,env=process.env){
  return `v+${compact}.${tag}@${env.EMAIL_REPLY_DOMAIN.toLowerCase()}`;
 }
 export const addressHash=address=>createHash('sha256').update(address.toLowerCase()).digest('hex');
-function mailbox(value){const match=String(value||'').trim().match(/^(?:[^<>]*<)?([^<>\s]+@[^<>\s]+)>?$/);return match?.[1]?.toLowerCase();}
-export async function receiveConfirmation(db,event,eventId,{env=process.env,request=fetch}={}){
+export function mailbox(value){const match=String(value||'').trim().match(/^(?:[^<>]*<)?([^<>\s]+@[^<>\s]+)>?$/);return match?.[1]?.toLowerCase();}
+export async function loadReceivedEmail(event,{env=process.env,request=fetch}={}){
  if(!env.RESEND_RECEIVING_API_KEY||!env.EMAIL_REPLY_DOMAIN)throw Error('Receiving configuration missing');
- const emailId=event.data?.email_id;if(typeof emailId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(emailId))return false;
+ const emailId=event.data?.email_id;if(typeof emailId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(emailId))return null;
  const response=await request('https://api.resend.com/emails/receiving/'+encodeURIComponent(emailId),{headers:{Authorization:`Bearer ${env.RESEND_RECEIVING_API_KEY}`},signal:AbortSignal.timeout(10000)});
  if(!response.ok)throw Error('Receiving provider temporarily unavailable');
- const mail=await response.json();if(mail.id!==emailId)return false;
+ const mail=await response.json();if(mail.id!==emailId)return null;
+ return mail;
+}
+export async function receiveConfirmation(db,event,eventId,{env=process.env,request=fetch,receivedMail}={}){
+ const mail=receivedMail||await loadReceivedEmail(event,{env,request});if(!mail)return false;
+ const emailId=mail.id;
  const headers=Object.fromEntries(Object.entries(mail.headers||{}).map(([k,v])=>[k.toLowerCase(),String(v).toLowerCase()]));
  if((headers['auto-submitted']&&headers['auto-submitted']!=='no')||/bulk|list|junk/.test(headers.precedence||'')||headers['x-autoreply']||headers['x-autorespond'])return false;
  // A reply to the unique address is the proof; no keyword or message body is required.

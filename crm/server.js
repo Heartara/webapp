@@ -1,4 +1,5 @@
 import {confirmationReadiness,receiveConfirmation} from './src/email-confirmation.js';
+import {clientEmailReadiness,receiveIncomingEmail} from './src/client-email.js';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -31,7 +32,7 @@ export function createApp(config={}) {
   return {db,staff:staff.data,user:data.user};
  }
  function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));}
- function rawBody(req){return new Promise((resolve,reject)=>{let size=0,chunks=[],tooLarge=false;req.on('data',chunk=>{size+=Buffer.byteLength(chunk);if(size>18000){if(!tooLarge)reject(new HttpError(413,'The request is too large.'));tooLarge=true;chunks=[];return;}chunks.push(Buffer.from(chunk));});req.on('end',()=>{if(!tooLarge)resolve(Buffer.concat(chunks));});req.on('error',reject);});}
+ function rawBody(req){return new Promise((resolve,reject)=>{let size=0,chunks=[],tooLarge=false;req.on('data',chunk=>{size+=Buffer.byteLength(chunk);if(size>(req.url.includes('/emails')?64000:18000)){if(!tooLarge)reject(new HttpError(413,'The request is too large.'));tooLarge=true;chunks=[];return;}chunks.push(Buffer.from(chunk));});req.on('end',()=>{if(!tooLarge)resolve(Buffer.concat(chunks));});req.on('error',reject);});}
  async function body(req){const raw=await rawBody(req);try{return JSON.parse(raw.toString())}catch{throw new HttpError(400,'Invalid request body.')}}
  function check(result){if(result.error){const message=result.error.message||'';if(message.includes('IDEMPOTENCY_CONFLICT'))throw new HttpError(409,'This request reference was already used with different details. Start a new request.');if(message.includes('RATE_LIMIT'))throw new HttpError(429,'Too many requests. Please wait 15 minutes and retry.');if(result.error.code==='23P01')throw new HttpError(409,'That appointment overlaps another booking.');throw new HttpError(422,'The change could not be saved. Check the fields, permissions and scheduling rules.');}return result.data;}
  return http.createServer(async(req,res)=>{
@@ -48,7 +49,7 @@ export function createApp(config={}) {
     if(!admin||!process.env.RESEND_WEBHOOK_SECRET)throw new HttpError(503,'Delivery callback is not configured.');
     const raw=(await rawBody(req)).toString();
     let event;try{new Webhook(process.env.RESEND_WEBHOOK_SECRET).verify(raw,{'svix-id':req.headers['svix-id'],'svix-timestamp':req.headers['svix-timestamp'],'svix-signature':req.headers['svix-signature']});event=JSON.parse(raw);}catch{throw new HttpError(401,'Invalid delivery signature.');}
-    if(event.type==='email.received')await receiveConfirmation(admin,event,req.headers['svix-id'],{request:config.receivingFetch||fetch});
+    if(event.type==='email.received')await receiveIncomingEmail(admin,event,req.headers['svix-id'],{request:config.receivingFetch||fetch});
     const state={'email.delivered':'delivered','email.bounced':'bounced','email.failed':'failed'}[event.type];
     if(state)check(await admin.rpc('record_notification_callback',{p_event:req.headers['svix-id'],p_provider_id:event.data.email_id,p_status:state}));
     return send(res,200,{received:true});
@@ -68,6 +69,26 @@ export function createApp(config={}) {
    if(path==='/api/public/reviews'&&req.method==='GET'){if(!admin)throw new HttpError(503,'Reviews are temporarily unavailable.');const rows=check(await admin.rpc('published_feedback'));return send(res,200,rows.map(r=>({id:r.id,name:r.display_name,text:r.public_text,year:r.display_year||''})));}
    if(path.startsWith('/api/private/')){
     const {db,staff}=await identity(req);const owner=staff.role==='owner';
+    const emailRoute=path.match(/^\/api\/private\/(enquiries|contacts)\/([a-f0-9-]+)\/emails$/);
+    if(emailRoute){
+     if(!owner)throw new HttpError(403,'Owner only.');const type=emailRoute[1],id=uuid(emailRoute[2]);
+     const record=check(await db.from(type).select('id').eq('id',id).single());
+     const threads=await db.from('client_email_threads').select('*').eq(type==='enquiries'?'enquiry_id':'contact_id',record.id).eq('revoked',false).order('created_at',{ascending:false});
+     if(threads.error&&['PGRST205','42P01'].includes(threads.error.code))return send(res,req.method==='GET'?200:503,{installed:false,threads:[],messages:[],error:'Install the client email database upgrade 202610260005_client_email.sql first.'});
+     check(threads);
+     if(req.method==='GET'){
+      let messages=[],total=0;const offset=Math.max(0,Number(params.get('offset'))||0);
+      if(threads.data.length){const history=await db.from('client_email_messages').select('*',{count:'exact'}).in('thread_id',threads.data.map(t=>t.id)).order('created_at',{ascending:false}).order('id').range(offset,offset+49);messages=check(history);total=history.count;}
+      return send(res,200,{installed:true,configured:clientEmailReadiness().ready,missing:clientEmailReadiness().missing,threads:threads.data.map(({reply_token_hash,...t})=>t),messages,total,offset});
+     }
+     if(req.method==='POST'){
+      if(!clientEmailReadiness().ready)throw new HttpError(503,'Complete sending and receiving setup in Settings first.');
+      const input=await body(req);if(typeof input.subject!=='string'||typeof input.body!=='string'||!input.subject.trim()||!input.body.trim()||input.subject.length>240||input.body.length>12000||/[\r\n]/.test(input.subject))throw new HttpError(422,'Enter a subject and message (up to 12,000 characters).');
+      const message=check(await db.rpc('queue_client_email',{p_key:uuid(req.headers['idempotency-key']),p_subject:input.subject,p_body:input.body,p_thread:input.thread_id?uuid(input.thread_id):null,p_enquiry:type==='enquiries'?id:null,p_contact:type==='contacts'?id:null}));
+      return send(res,200,{queued:true,id:message});
+     }
+     throw new HttpError(405,'Method not supported.');
+    }
     if(path==='/api/private/me')return send(res,200,staff);
     if(path==='/api/private/notifications/config'&&req.method==='GET'){
      if(!owner)throw new HttpError(403,'Owner only.');

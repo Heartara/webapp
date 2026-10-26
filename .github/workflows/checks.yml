@@ -21,4 +21,4 @@ jobs:
           SITE_ENV: production
       - run: npm test
       - run: npm run check
-      - run: node --test crm/tests/vercel.test.js crm/tests/presentation.test.js crm/tests/configuration.test.js crm/tests/forms.test.js crm/tests/email.test.js crm/tests/email-confirmation.test.js
+      - run: node --test crm/tests/vercel.test.js crm/tests/presentation.test.js crm/tests/configuration.test.js crm/tests/forms.test.js crm/tests/email.test.js crm/tests/email-confirmation.test.js crm/tests/client-email.test.js

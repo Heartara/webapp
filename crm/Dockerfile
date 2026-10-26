@@ -12,7 +12,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY *.html *.css *.js posts.json reviews.json ./
 COPY assets ./assets
 COPY crm/server.js crm/worker.js crm/notification-runner.js ./crm/
-COPY crm/src/resources.js crm/src/validation.js crm/src/configuration.js crm/src/email-settings.js crm/src/email-confirmation.js ./crm/src/
+COPY crm/src/resources.js crm/src/validation.js crm/src/configuration.js crm/src/email-settings.js crm/src/email-confirmation.js crm/src/client-email.js ./crm/src/
 COPY crm/public/index.html crm/public/crm.css ./crm/public/
 COPY --from=build /app/crm/public/app.js ./crm/public/app.js
 USER node

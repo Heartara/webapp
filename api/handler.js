@@ -14,5 +14,5 @@ export default function handler(req, res) {
     req.url = '/api/' + route + (url.search ? url.search : '');
   }
   if (!req.url.startsWith('/api/')) { res.statusCode = 404; return res.end('Not found'); }
-  return new Promise(resolve => { res.once('finish', () => { if (process.env.VERCEL === '1' && req.method === 'POST' && req.url.startsWith('/api/public/submissions') && res.statusCode === 200) waitUntil(processNotifications().catch(() => { /* Durable queued jobs remain visible for retry. */ })); resolve(); }); res.once('close', resolve); app.emit('request', req, res); });
+  return new Promise(resolve => { res.once('finish', () => { if (process.env.VERCEL === '1' && req.method === 'POST' && (req.url.startsWith('/api/public/submissions')||/^\/api\/private\/(enquiries|contacts)\/[a-f0-9-]+\/emails(?:\?|$)/.test(req.url)||req.url.startsWith('/api/provider/resend-webhook')) && res.statusCode === 200) waitUntil(processNotifications().catch(() => { /* Durable queued jobs remain visible for retry. */ })); resolve(); }); res.once('close', resolve); app.emit('request', req, res); });
 }

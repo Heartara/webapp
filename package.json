@@ -11,7 +11,7 @@
     "crm:worker": "node --env-file-if-exists=crm/.env crm/worker.js",
     "crm:test": "node --test crm/tests/*.test.js",
     "crm:test:integration": "bash crm/scripts/test.sh",
-    "crm:test:browser": "node crm/tests/browser.cjs && node crm/tests/contact-workflow.cjs && node crm/tests/confirmation-workflow.cjs",
+    "crm:test:browser": "node crm/tests/browser.cjs && node crm/tests/contact-workflow.cjs && node crm/tests/confirmation-workflow.cjs && node crm/tests/client-email-browser.cjs",
     "vercel:build": "npm run crm:build && node crm/scripts/build-vercel.js",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
