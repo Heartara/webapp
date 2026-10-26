@@ -8,6 +8,8 @@ import {Webhook} from 'svix';
 import {HttpError,validateSubmission,uuid,csv} from './src/validation.js';
 import {resources,searchFields,filters,pickFields} from './src/resources.js';
 import {resolveConfiguration,rateLimitKey} from './src/configuration.js';
+import {emailReadiness} from './src/email-settings.js';
+import {processNotifications} from './notification-runner.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const options={auth:{persistSession:false,autoRefreshToken:false}};
 export function createApp(config={}) {
@@ -62,6 +64,18 @@ export function createApp(config={}) {
    if(path.startsWith('/api/private/')){
     const {db,staff}=await identity(req);const owner=staff.role==='owner';
     if(path==='/api/private/me')return send(res,200,staff);
+    if(path==='/api/private/notifications/config'&&req.method==='GET'){
+     if(!owner)throw new HttpError(403,'Owner only.');
+     const settings=check(await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single());
+     return send(res,200,emailReadiness(settings));
+    }
+    if(path==='/api/private/notifications/process'&&req.method==='POST'){
+     if(!owner)throw new HttpError(403,'Owner only.');
+     const settings=check(await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single());
+     if(!emailReadiness(settings).ready)throw new HttpError(503,'Email alerts are not ready. Check the sending service, saved recipient and alert switch in Settings.');
+     return send(res,200,await processNotifications());
+    }
+
     if(path==='/api/private/export'&&req.method==='GET'){
      if(!owner)throw new HttpError(403,'Only the owner can export records.');const resource=params.get('resource');const allowed={contacts:['id','name','email_original','phone','created_at'],enquiries:['id','status','topic','received_at','contact_id'],appointments:['id','contact_id','starts_at','ends_at','status'],tasks:['id','title','due_at','status']};if(!allowed[resource])throw new HttpError(422,'Choose an export type.');
      let rows=[];for(let offset=0;offset<10000;offset+=500){const result=check(await db.from(resource).select(allowed[resource].join(',')).order('id').range(offset,offset+499));rows.push(...result);if(result.length<500)break;if(offset===9500)throw new HttpError(422,'Export exceeds 10,000 records. Use a reviewed database export.');}

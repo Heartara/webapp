@@ -38,3 +38,8 @@ A live Preview screenshot showed an object-shaped error rendered as [object Obje
 ## Enquiry/contact interface refinement
 
 Replaced raw enquiry/contact payload displays and JSON history with labelled name/email/contact cards, readable enquiry interests and follow-up badges. Added direct contact creation, explicit shared-email candidate review, linked profile navigation, per-enquiry follow-up updates and a contact-list summary. The existing converted database state is presented as waiting for response, so creating a contact is not described as completing an enquiry or sale. Original submissions remain immutable and the same enquiry status is used in both views. API tests verify conversion replay, nested contact summaries, name/email search and status consistency; Chromium verifies the complete form-to-contact flow and mobile layout. No production client records were changed during development.
+
+
+## Owner email notification setup
+
+Read-only inspection found one real queued notification, alerts disabled and no configured recipient or sending-provider settings. Saved Penny’s explicitly requested Gmail address in business_settings without enabling unconfigured alerts or sending email. Added owner-only setup diagnostics, a guarded enable action and an owner-triggered queued-send action, retaining private minimal-content emails and outbox idempotency. The worker uses the saved recipient directly and can process a previously never-attempted older job after setup. Tests used fake mail transport only. Real sending still requires Resend domain/API setup in Vercel.
