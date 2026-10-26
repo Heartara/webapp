@@ -15,6 +15,6 @@ export const resources = {
  business_settings: ['notification_email','notification_enabled','private_address','retention_policy'],
  staff_users: [], consent_events: [], activity_events: [], notification_outbox: [], appointment_changes: [], package_session_movements: [], package_movement_history: []
 };
-export const searchFields = {contacts:['name','email_original'],enquiries:['original_message'],services:['name'],tasks:['title'],feedback:['display_name','public_text']};
-export const filters = ['status','owner_id','assigned_to','contact_id','enquiry_id','appointment_id','practitioner_id','journey_id','participant_id','package_id','topic','service_id','submission_id'];
+export const searchFields = {contacts:['name','email_original'],enquiries:['original_message','details->>name','details->>email'],services:['name'],tasks:['title'],feedback:['display_name','public_text']};
+export const filters = ['status','owner_id','assigned_to','contact_id','enquiry_id','appointment_id','practitioner_id','journey_id','participant_id','package_id','topic','service_id','submission_id','email_normalised'];
 export function pickFields(resource, body) { return Object.fromEntries((resources[resource]||[]).filter(k=>Object.hasOwn(body,k)).map(k=>[k,body[k]])); }

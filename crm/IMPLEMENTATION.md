@@ -33,3 +33,8 @@ After Penny reported importing GitHub into Vercel, the refreshed main ref was fo
 ## Public form submission repair
 
 A live Preview screenshot showed an object-shaped error rendered as [object Object]. Fixed same-origin credential handling for protected Vercel Previews, normalised public error display, same-host origin acceptance and secure key-separated rate-limiter fallback when no dedicated salt is set. Chromium with a simulated Preview-cookie gate verifies a saved synthetic enquiry; API coverage confirms three-setting same-origin requests persist while unapproved cross-origin requests remain rejected. Read-only hosted checks found zero form submissions/enquiries at diagnosis; no live test message or email was sent. Live Preview requests remain blocked by this workspace egress policy, so deployed success still needs confirmation.
+
+
+## Enquiry/contact interface refinement
+
+Replaced raw enquiry/contact payload displays and JSON history with labelled name/email/contact cards, readable enquiry interests and follow-up badges. Added direct contact creation, explicit shared-email candidate review, linked profile navigation, per-enquiry follow-up updates and a contact-list summary. The existing converted database state is presented as waiting for response, so creating a contact is not described as completing an enquiry or sale. Original submissions remain immutable and the same enquiry status is used in both views. API tests verify conversion replay, nested contact summaries, name/email search and status consistency; Chromium verifies the complete form-to-contact flow and mobile layout. No production client records were changed during development.

@@ -80,7 +80,7 @@ export function createApp(config={}) {
     }
     const parts=path.split('/').filter(Boolean),resource=parts[2],id=parts[3];if(!Object.hasOwn(resources,resource))throw new HttpError(404,'Not found.');
     if(req.method==='GET'){
-     let query=db.from(resource).select('*',{count:'exact'});if(id)query=query.eq('id',uuid(id));for(const name of filters)if(params.has(name))query=query.eq(name,params.get(name));
+     const selection=resource==='contacts'?'*,enquiries(id,topic,status,received_at)':'*';let query=db.from(resource).select(selection,{count:'exact'});if(resource==='contacts')query=query.order('received_at',{referencedTable:'enquiries',ascending:false}).limit(3,{referencedTable:'enquiries'});if(id)query=query.eq('id',uuid(id));for(const name of filters)if(params.has(name))query=query.eq(name,params.get(name));
      const q=params.get('q');if(q&&searchFields[resource]){if(q.length>100)throw new HttpError(422,'Search is too long.');const safe=q.replace(/[^\p{L}\p{N}@. _-]/gu,'');query=query.or(searchFields[resource].map(f=>`${f}.ilike.%${safe}%`).join(','));}
      if(params.get('from'))query=query.gte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('from'));if(params.get('to'))query=query.lte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('to'));
      const offset=Math.max(0,Number(params.get('offset'))||0);const result=await query.order(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':'id',{ascending:resource==='appointments'}).range(offset,offset+49);check(result);return send(res,200,{rows:result.data,total:result.count,offset});

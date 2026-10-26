@@ -126,3 +126,8 @@ Inactive staff are denied at the next request and by RLS, even if an Auth token 
 ## Deferred and outstanding
 
 No live account connection, hosted Auth/MFA/reset verification, sending-domain verification, production deployment, hosted backup restore, or automatic work-hours engine has been claimed. Multi-user delegated editing, events/ticketing, payments, stock, certificates, mailbox sync, client portal and wider journal publishing remain deferred. The original static journal editor remains separate and is not represented as a secure CRM publishing system.
+
+
+## Readable enquiries and contact follow-up
+
+The inbox shows submitted names/emails and plain-language interests/statuses. Enquiry details use labelled cards, not raw JSON. Owners can create a contact directly from an enquiry; if an active contact shares the email, the interface asks for a reviewed choice rather than auto-merging. The database conversion RPC remains idempotent. Creating a contact links the original enquiry and is displayed as “Waiting for response”, not as a completed sale. The contact list shows its most recent linked interest and follow-up, and the profile shows each linked enquiry separately. “Update status” on the profile edits the same enquiry record as the inbox, so both views stay consistent. Contact summaries are fetched under the signed-in user’s row-level permissions. There is no schema migration for this interface update.
