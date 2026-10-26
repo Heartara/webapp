@@ -31,7 +31,7 @@ const images=JSON.parse(await readFile(resolve(root,'image-manifest.json'),'utf8
 let dates={};try{dates=JSON.parse(await readFile(resolve(root,'.content-dates.json'),'utf8'));}catch{}
 const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Brisbane',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});await cp(resolve(root,'assets'),resolve(dist,'assets'),{recursive:true});
-const publicAssets=['app.js','styles.css','forms.js','booking.js','booking-rules.js','reviews.js','journal.js','availability.json','posts.json','reviews.json'];
+const publicAssets=['app.js','styles.css','form-response.js','forms.js','booking.js','booking-rules.js','reviews.js','journal.js','availability.json','posts.json','reviews.json'];
 for(const path of publicAssets)await cp(resolve(root,path),resolve(dist,path));
 await writeFile(resolve(dist,'public-config.js'),'// Public configuration only; no secrets.\nexport default '+JSON.stringify({apiBase,analyticsEnabled:config.analyticsEnabled===true})+';\n');
 function imageAttrs(tag){const m=tag.match(/src="([^"]+)"/);if(!m)return tag;const info=images[m[1]];if(!info)return tag;

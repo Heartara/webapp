@@ -1,5 +1,6 @@
 import {requestError} from './booking-rules.js';
 import config from './public-config.js';
+import {submissionError} from './form-response.js';
 export function recordSaved(kind){
  const names={enquiry:'enquiry_saved',booking:'booking_request_saved',feedback:'feedback_saved'};
  const event=names[kind];if(!event)return;
@@ -27,9 +28,9 @@ for(const form of document.querySelectorAll('.crm-form')){
   const signature=JSON.stringify(payload);if(lastPayload&&signature!==lastPayload)requestId.value=crypto.randomUUID();lastPayload=signature;
   busy=true;button.disabled=true;status.textContent='Saving your request…';
   try{
-   const response=await fetch(api('api/public/submissions'),{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':requestId.value},credentials:'omit',body:signature});
+   const response=await fetch(api('api/public/submissions'),{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':requestId.value},credentials:'same-origin',body:signature});
    let result;try{result=await response.json();}catch{throw Error('Your request could not be saved. Keep this page open and retry.');}
-   const data={saved:result.received===true};if(!response.ok||data.saved!==true)throw Error(result.error||'Your request has not been saved. Please retry.');
+   const data={saved:result.received===true};if(!response.ok||data.saved!==true)throw Error(submissionError(result,response.status));
    status.textContent=form.dataset.kind==='booking'?'Your booking request has been saved. Penny will respond personally. Your appointment is not confirmed until Penny approves it.':form.dataset.kind==='feedback'?'Thank you. Your feedback has been saved privately for Penny to review. It is not published automatically.':'Your enquiry has been saved. Penny will respond personally.';
    recordSaved(form.dataset.kind);form.reset();requestId.value=crypto.randomUUID();lastPayload='';update();
   }catch(error){status.textContent=(error.message==='Failed to fetch'?'Your request has not been sent. Please retry when the connection is available.':error.message)+' Your entries are still here for a safe retry.';}

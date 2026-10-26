@@ -1,3 +1,4 @@
+import {hkdfSync} from 'node:crypto';
 // Public diagnostics list variable names only. Never return server credentials.
 export function isPublicKey(key){
  if(typeof key!=='string')return false;
@@ -17,4 +18,14 @@ export function resolveConfiguration(config={},env=process.env){
  let message='';if(missing.length)message=`Missing Vercel settings for ${environment}: ${missing.join(', ')}. Add them to this environment, then redeploy.`;
  if(errors.length)message+=(message?' ':'')+errors.join(' ');
  return {url:origin||undefined,publicKey,secret,missing,errors,environment,message,ready:missing.length===0&&errors.length===0};
+}
+// A dedicated value can be supplied, otherwise derive an independent rate-limit
+// key from the server-only credential. The key never leaves the server.
+export function rateLimitKey({explicit,secret}){
+ if(typeof explicit==='string'&&explicit.trim())return explicit.trim();
+ if(typeof secret!=='string'||secret.length<32)return null;
+ let trusted=secret.startsWith('sb_secret_');
+ try{trusted||=JSON.parse(Buffer.from(secret.split('.')[1],'base64url').toString()).role==='service_role';}catch{}
+ if(!trusted)return null;
+ return Buffer.from(hkdfSync('sha256',secret,'heartara-server-v1','submission-rate-limiter',32));
 }

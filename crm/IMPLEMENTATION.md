@@ -28,3 +28,8 @@ User confirmed no Vercel project exists yet and asked for preparation. No Vercel
 ## Current-main reconciliation
 
 After Penny reported importing GitHub into Vercel, the refreshed main ref was found to contain substantial later website work through 90c328b (the previous implicit fetch had not updated origin/main). The branch now merges that current main without reverting its pages, photos, seven review texts or SEO build. The current .crm-form calendar/contact/feedback forms now map to the Supabase API; the Vercel build wraps the existing 13-page SEO build instead of publishing older page copies. The legacy SQLite implementation and tests remain for compatibility but are not used by the Vercel production API. Live domain checks are blocked by this execution environment’s egress policy, so no public response or successful live submission is claimed.
+
+
+## Public form submission repair
+
+A live Preview screenshot showed an object-shaped error rendered as [object Object]. Fixed same-origin credential handling for protected Vercel Previews, normalised public error display, same-host origin acceptance and secure key-separated rate-limiter fallback when no dedicated salt is set. Chromium with a simulated Preview-cookie gate verifies a saved synthetic enquiry; API coverage confirms three-setting same-origin requests persist while unapproved cross-origin requests remain rejected. Read-only hosted checks found zero form submissions/enquiries at diagnosis; no live test message or email was sent. Live Preview requests remain blocked by this workspace egress policy, so deployed success still needs confirmation.

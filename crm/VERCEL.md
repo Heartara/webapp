@@ -44,7 +44,7 @@ Add these under **Vercel Project → Settings → Environment Variables**, for t
 | `SUPABASE_URL` | `https://emsheprjvfwjwkamfxss.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key, or legacy anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Actual Supabase server-only service-role key; sensitive |
-| `RATE_LIMIT_SALT` | A new long random secret (32+ random bytes recommended) |
+| `RATE_LIMIT_SALT` | Optional dedicated long random secret; otherwise a separate limiter key is derived from the server-only Supabase credential |
 | `PUBLIC_BASE_URL` | `https://heartarahealing.com/` (confirm this is the connected domain) |
 | `ALLOWED_ORIGINS` | Exact HTTPS Vercel/custom domain origins, comma-separated, no paths |
 | `EMAIL_MODE` | `sandbox` until a sender is verified and alerts are approved |
@@ -87,3 +87,5 @@ The latest main website has been merged into this branch, preserving Peru/attune
 ## Diagnosing a disabled sign-in button
 
 The configuration response now names missing variables and whether the running deployment is Preview or Production, without exposing values. Save variables for both environments if you use both, then open a newly deployed URL. An existing immutable deployment URL keeps its old environment snapshot. Common Vercel integration aliases (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and server-only `SUPABASE_SECRET_KEY`) are accepted. Browser configuration rejects privileged keys and identifies an invalid project URL safely.
+
+Protected Preview form requests now use same-origin credentials, preserving Vercel access cookies without sending them to other origins. Public error objects are rendered as readable text. Same-origin website requests are accepted on the actual request host; additional cross-origin sites still require the explicit allowlist. A dedicated RATE_LIMIT_SALT is optional when a valid server-only Supabase key is available: an independently scoped HKDF key protects short-lived IP rate buckets. Placeholder/public keys cannot supply that fallback. No raw IPs or derived secrets are returned.

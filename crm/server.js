@@ -7,7 +7,7 @@ import {createClient} from '@supabase/supabase-js';
 import {Webhook} from 'svix';
 import {HttpError,validateSubmission,uuid,csv} from './src/validation.js';
 import {resources,searchFields,filters,pickFields} from './src/resources.js';
-import {resolveConfiguration} from './src/configuration.js';
+import {resolveConfiguration,rateLimitKey} from './src/configuration.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const options={auth:{persistSession:false,autoRefreshToken:false}};
 export function createApp(config={}) {
@@ -36,7 +36,7 @@ export function createApp(config={}) {
   res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${url?new URL(url).origin:''}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`);
   const origin=req.headers.origin;
   try{
-   if(origin){if(!origins.includes(origin))throw new HttpError(403,'This website origin is not enabled.');res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
+   if(origin){const ownOrigin=(process.env.VERCEL==='1'||req.socket.encrypted?'https://':'http://')+req.headers.host;if(origin!==ownOrigin&&!origins.includes(origin))throw new HttpError(403,'This website origin is not enabled.');res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type,Authorization,Idempotency-Key');res.writeHead(204);return res.end();}
    const path=new URL(req.url,'http://localhost').pathname;const params=new URL(req.url,'http://localhost').searchParams;
    if(path==='/api/health'&&req.method==='GET')return send(res,200,{status:'running',database_configured:Boolean(admin&&connection.ready),email_mode:process.env.EMAIL_MODE||'sandbox'});
@@ -54,8 +54,8 @@ export function createApp(config={}) {
     const key=uuid(req.headers['idempotency-key']);const raw=await body(req);const {kind,payload}=validateSubmission(raw);
     const hash=createHash('sha256').update(JSON.stringify({kind,payload})).digest('hex');
     const ip=process.env.VERCEL==='1'?(req.headers['x-vercel-forwarded-for']||'').split(',')[0].trim()||'vercel-unavailable':process.env.TRUST_PROXY==='true'?(req.headers['x-forwarded-for']||'').split(',')[0].trim():req.socket.remoteAddress;
-    const salt=process.env.RATE_LIMIT_SALT;if(!salt&&!config.rateSalt)throw new HttpError(503,'Request protection is not configured. Nothing was submitted.');
-    const bucket=createHmac('sha256',config.rateSalt||salt).update(`${ip}|${Math.floor(Date.now()/900000)}`).digest('hex');
+    const salt=rateLimitKey({explicit:config.rateSalt||process.env.RATE_LIMIT_SALT,secret});if(!salt)throw new HttpError(503,'Request protection is not configured. Nothing was submitted.');
+    const bucket=createHmac('sha256',salt).update(`${ip}|${Math.floor(Date.now()/900000)}`).digest('hex');
     return send(res,200,check(await admin.rpc('submit_heartara',{p_key:key,p_hash:hash,p_kind:kind,p_payload:payload,p_bucket:bucket})));
    }
    if(path==='/api/public/reviews'&&req.method==='GET'){if(!admin)throw new HttpError(503,'Reviews are temporarily unavailable.');const rows=check(await admin.rpc('published_feedback'));return send(res,200,rows.map(r=>({id:r.id,name:r.display_name,text:r.public_text,year:r.display_year||''})));}
