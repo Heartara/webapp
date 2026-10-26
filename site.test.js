@@ -12,7 +12,7 @@ test('pages and required assets are served with appropriate content types', asyn
 });
 test('private files and missing routes are not exposed', async () => { for (const path of ['/.git/config','/package.json','/missing.html']) assert.equal((await fetch(base+path)).status,404); });
 test('all internal page and fragment links resolve', async () => {
- for (const file of ['index.html','oracle.html','offerings.html','group-healing.html','about.html','journal.html','write.html']) {
+ for (const file of ['index.html','oracle.html','offerings.html','group-healing.html','about.html','journal.html','write.html','contact.html','booking.html','disclaimer.html','manage-reviews.html']) {
   const html = await readFile(new URL(file, import.meta.url),'utf8');
   for (const [,href] of html.matchAll(/href="([^\"]+)"/g)) {
    if (/^(mailto:|https:)/.test(href)) continue;
@@ -38,4 +38,16 @@ test('offerings retain confirmed prices and group ceremony order', async () => {
  const stages = ['Welcome</h3>', 'Cacao & intention</h3>', 'A card & a crystal</h3>', 'The release bowl</h3>', 'The Soul Journey</h3>', 'Sharing & witnessing</h3>', 'The Heart Blessing</h3>', 'Fire release</h3>', 'Food & closing</h3>'];
  let previous = -1; for (const stage of stages) { const position = group.indexOf(stage); assert.ok(position > previous,stage); previous = position; }
  assert.deepEqual(await (await fetch(base+'/posts.json')).json(), []);
+});
+
+test('all public enquiry and feedback actions stay on site without mail app fallback', async () => {
+ const { readdir } = await import('node:fs/promises');
+ for(const file of await readdir(new URL('.', import.meta.url))) {
+  if(!file.endsWith('.html'))continue;
+  const html=await readFile(new URL(file,import.meta.url),'utf8');
+  assert.ok(!html.includes('mailto:'),file+' has mailto submission');
+  assert.ok(!html.includes('Prepare email'),file+' has email-app copy');
+ }
+ const js=await readFile(new URL('public-forms.js',import.meta.url),'utf8');
+ assert.ok(!js.includes('localStorage'));assert.ok(!js.includes('mailto:'));
 });

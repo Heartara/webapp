@@ -1,1 +1,28 @@
-{"name":"heartara-webapp","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"},"engines":{"node":">=22"}}
+{
+  "name": "heartara-webapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test site.test.js",
+    "crm:build": "esbuild crm/src/client.js --bundle --minify --format=iife --target=es2022 --outfile=crm/public/app.js",
+    "crm:start": "node --env-file-if-exists=crm/.env crm/server.js",
+    "crm:worker": "node --env-file-if-exists=crm/.env crm/worker.js",
+    "crm:test": "node --test crm/tests/*.test.js",
+    "crm:test:integration": "bash crm/scripts/test.sh",
+    "crm:test:browser": "node crm/tests/browser.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "svix": "^2.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "pg": "^8.23.1",
+    "playwright": "^1.64.1"
+  }
+}

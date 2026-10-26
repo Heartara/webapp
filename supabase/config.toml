@@ -1,0 +1,14 @@
+project_id = "heartara-crm"
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+[auth]
+enabled = true
+site_url = "http://localhost:3100/crm/"
+additional_redirect_urls = ["http://localhost:3100/crm/"]
+enable_signup = false
+[auth.email]
+enable_signup = false
+enable_confirmations = true

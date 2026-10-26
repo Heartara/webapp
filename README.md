@@ -1,6 +1,6 @@
 # Heartara website draft
 
-A responsive, dependency-free draft based on the supplied Heartara master reference. Includes the homepage, dedicated oracle page, searchable 44-card contents, mobile navigation and email enquiry links. See [content review](docs/CONTENT_REVIEW.md) for editorial decisions and publication requirements.
+A responsive static website draft based on the supplied Heartara master reference. Includes the homepage, dedicated oracle page, searchable 44-card contents, mobile navigation and email enquiry links. See [content review](docs/CONTENT_REVIEW.md) for editorial decisions and publication requirements.
 
 ## Develop
 
@@ -30,3 +30,8 @@ New pages: `offerings.html` (Reiki, Munay Ki and despacho), `group-healing.html`
 ## Managing reviews
 
 Visitors can write feedback in the homepage form, which prepares an email to Penny. They must send that email from their own email application. No submission is automatically published or stored on the website. After reviewing the feedback and its publication permission, open `manage-reviews.html` to add it to the local approved list. Remove entries there when needed, download `reviews.json`, and upload the file to the repository root through the linked GitHub upload screen. Commit to main to publish changes. The editor itself is public and has no power to publish without repository authentication. There is no server inbox, automatic spam filter or private admin backend. The Facebook review URL remains pending.
+
+
+## Supabase CRM development
+
+The private CRM, connected on-site forms and notification worker are in `crm/`. Run `npm ci`, `npm run crm:build` and `npm run crm:start`. See [CRM setup and deployment](crm/README.md) and the [implementation report](crm/IMPLEMENTATION.md). The hosted Supabase project is not connected yet; this development change must not be released to the live website until the backend, owner login and privacy settings are verified. Public site test: `npm test`. Full isolated database/API tests: `npm run crm:test:integration`.
