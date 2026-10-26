@@ -12,7 +12,7 @@ No separate always-running server or backend host is needed for this deployment.
 
 ## Actual connection state, 26 October 2026
 
-The supplied Supabase project is reachable and its supplied keys can access the API. Read-only checks found the CRM tables absent (`PGRST205` for staff_users, services and business_settings). Public Auth signup is currently enabled. No customer records were submitted during these checks. No Vercel project, deployment credentials or deployment URL is available to this task yet. Thus the integration is prepared, not live-verified.
+The supplied Supabase project is reachable and its supplied keys can access the API. Read-only checks found the CRM tables absent (`PGRST205` for staff_users, services and business_settings). Public Auth signup is currently enabled. No customer records were submitted during these checks. Penny now reports importing GitHub into Vercel and connecting the domain. No project URL, deployment access or independently verified live response is available to this task yet. Thus the integration is prepared, not live-verified.
 
 ## 1. Install the database once
 
@@ -20,7 +20,7 @@ In your existing Supabase project, open **SQL Editor → New query**. Copy the c
 
 In **Authentication**, disable new public user signups. Create your own user securely in the Supabase Auth Dashboard. Then open `crm/scripts/provision-owner.sql`, replace `OWNER_AUTH_UUID` with your actual Auth user ID, and run it. This assigns the private CRM owner role without any default password.
 
-Import the actual four existing reviews only after reviewing `crm/legacy-reviews-review.sql`, replacing its owner UUID, and confirming the supplied permission provenance. No production review import is performed automatically. With no imported/published feedback, the site honestly shows no published reviews.
+Import the actual seven existing reviews only after reviewing `crm/legacy-reviews-review.sql`, replacing its owner UUID, and confirming the supplied permission provenance. No production review import is performed automatically. With no imported/published feedback, the site honestly shows no published reviews.
 
 ## 2. Import the repository into Vercel
 
@@ -45,6 +45,7 @@ Add these under **Vercel Project → Settings → Environment Variables**, for t
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key, or legacy anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Actual Supabase server-only service-role key; sensitive |
 | `RATE_LIMIT_SALT` | A new long random secret (32+ random bytes recommended) |
+| `PUBLIC_BASE_URL` | `https://heartarahealing.com/` (confirm this is the connected domain) |
 | `ALLOWED_ORIGINS` | Exact HTTPS Vercel/custom domain origins, comma-separated, no paths |
 | `EMAIL_MODE` | `sandbox` until a sender is verified and alerts are approved |
 | `CRON_SECRET` | A separate strong random secret for the notification recovery endpoint |
@@ -80,3 +81,5 @@ See `crm/README.md` for the detailed permissions and operational limitations. Th
 ## Reproducing Vercel runtime checks
 
 `node --test crm/tests/vercel.test.js` checks the build allowlist, routes and protected notification endpoint. The full `bash crm/scripts/test.sh` includes those tests. For the official runtime test, first prepare the synthetic database, install `@vercel/node@27.0.2` in a tooling directory outside the checkout, then run `VERCEL_RUNTIME_PACKAGE_PATH=/absolute/path/to/tooling/node_modules/@vercel/node node --test crm/tests/vercel-runtime.test.js`. This uses synthetic credentials and records only, and tests the actual Vercel body helper path including signed callback bytes. It does not deploy or contact a live email provider.
+
+The latest main website has been merged into this branch, preserving Peru/attunement photographs, seven reviews, new offering pages, canonical metadata and sitemap generation. The former SQLite request server is retained for its existing tests/local preview but is not the Vercel production backend; forms are wired to the Supabase submission endpoint. On Vercel the public bundle contains no static review copies, so withdrawals do not leave old reviews in the delivered HTML/JSON.

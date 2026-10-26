@@ -1,14 +1,19 @@
-import { mkdir, rm, cp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, cp, readFile, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
 const root=resolve(new URL('../../',import.meta.url).pathname),output=resolve(root,'dist');
-const pages=['index.html','about.html','offerings.html','group-healing.html','oracle.html','journal.html','contact.html','booking.html','disclaimer.html','manage-reviews.html'];
-const scripts=['app.js','public-forms.js','reviews.js','journal.js','styles.css','posts.json'];
-await rm(output,{recursive:true,force:true});await mkdir(resolve(output,'crm'),{recursive:true});
-for(const name of [...pages,...scripts])await cp(resolve(root,name),resolve(output,name));
-await cp(resolve(root,'assets'),resolve(output,'assets'),{recursive:true});
+const base=process.env.PUBLIC_BASE_URL||'https://heartarahealing.com/';
+execFileSync(process.execPath,['scripts/build.mjs'],{cwd:root,env:{...process.env,PUBLIC_BASE_URL:base,PUBLIC_API_BASE:'',SITE_ENV:process.env.VERCEL_ENV==='production'?'production':'preview'},stdio:'inherit'});
+await mkdir(resolve(output,'crm'),{recursive:true});
 for(const name of ['index.html','app.js','crm.css'])await cp(resolve(root,'crm/public',name),resolve(output,'crm',name));
-// No environment values are copied into public assets. Same-origin Vercel API handles all forms.
 await writeFile(resolve(output,'crm-public-config.js'),"window.HEARTARA_CRM = {apiBase:''};\n");
-// The old journal export editor remains a separate draft feature; don't ship its Github upload flow as CRM.
-for(const name of pages){const path=resolve(output,name);let html=await readFile(path,'utf8');html=html.replace('</footer>','<p class="owner-login"><a href="/crm/">Private Heartara login</a></p></footer>');await writeFile(path,html);}
-console.log('Vercel public bundle built: website, private login shell and public assets only.');
+// Serve the current site and its metadata; owner moderation lives only in the authenticated CRM.
+for(const name of ['index.html','about.html','offerings.html','reiki.html','reiki-training.html','munay-ki.html','ceremony.html','group-healing.html','oracle-cards.html','contact.html','booking.html','disclaimer.html','policies.html','journal.html']){
+ const path=resolve(output,name);let html=await readFile(path,'utf8');
+ html=html.replace('</footer>','<p class="owner-login"><a href="/crm/">Private Heartara login</a></p></footer>');
+ if(name==='index.html')html=html.replace(/<div id="published-reviews" class="review-grid">[\s\S]*?<\/div>/,'<div id="published-reviews" class="review-grid"><p>Loading approved client reviews…</p></div>');
+ await writeFile(path,html);
+}
+// Raw legacy reviews must not survive withdrawal through a public static JSON file.
+await rm(resolve(output,'reviews.json'),{force:true});
+console.log('Vercel bundle built from current website: same-origin Supabase forms and private CRM.');

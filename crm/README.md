@@ -17,7 +17,7 @@ Vercel is the selected hosting target. See [VERCEL.md](VERCEL.md) for the exact 
 - Background `crm/worker.js` uses the transactional outbox. Default transport is a file preview under `/tmp`; it sends no real email.
 - Supabase JavaScript **v2**, pinned in package-lock.json. Official Supabase server-side auth and row-level-security documentation was consulted from the Supabase repository. All SDK APIs exercised locally use the pinned package. The local REST fixture uses PostgREST 12.2.12 and PostgreSQL 17; those are testing tools, not a replacement for hosted Supabase Auth.
 
-Inspected source: local base `1ff0c37`, with no pre-existing application changes. The brief's audit mentions later pages and seven reviews that are **not in this checkout**. This implementation adds contact, booking and privacy pages and retains the four actual supplied review texts. Wendy’s review and the additional three texts were not present; none were invented. No externally edited website was downloaded and overwritten. Verify the current production source before release.
+Initial inspected source was `1ff0c37`. The later `main` version through `90c328b` has now been merged, preserving the latest 13 public pages, Peru/attunement photos, seven supplied reviews and SEO build. Current calendar/contact/feedback forms are connected to the Supabase API for Vercel. The original SQLite backend remains in the repository for its existing local tests, but is not deployed as the Vercel CRM backend.
 
 ## What is implemented
 

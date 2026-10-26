@@ -9,3 +9,6 @@ crm/test-output/
 
 dist/
 .vercel/
+*.sqlite*
+*.db*
+coverage/

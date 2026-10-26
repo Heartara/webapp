@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://heartara.github.io/webapp/sitemap.xml

@@ -1,21 +1,24 @@
 {
   "name": "heartara-webapp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test site.test.js",
+    "test": "node --test booking-rules.test.js tests/*.test.mjs",
     "crm:build": "esbuild crm/src/client.js --bundle --minify --format=iife --target=es2022 --outfile=crm/public/app.js",
     "crm:start": "node --env-file-if-exists=crm/.env crm/server.js",
     "crm:worker": "node --env-file-if-exists=crm/.env crm/worker.js",
     "crm:test": "node --test crm/tests/*.test.js",
     "crm:test:integration": "bash crm/scripts/test.sh",
     "crm:test:browser": "node crm/tests/browser.cjs",
-    "vercel:build": "npm run crm:build && node crm/scripts/build-vercel.js"
+    "vercel:build": "npm run crm:build && node crm/scripts/build-vercel.js",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "dev": "node server.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

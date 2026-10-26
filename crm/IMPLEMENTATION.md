@@ -23,3 +23,8 @@ The website and `/crm/` are prepared for one Vercel project. Added curated stati
 Read-only hosted Supabase checks now succeed with the supplied keys, but GET requests for staff_users, services and business_settings return PGRST205: CRM tables are not installed. Supabase Auth reports public signup enabled. No hosted CRM submission, database migration, user creation or production email was performed. The earlier HEAD-only checks were not sufficient to prove table readiness; the GET checks establish the remaining setup requirement.
 
 User confirmed no Vercel project exists yet and asked for preparation. No Vercel deployment, custom domain or DNS change has been made. The exact remaining steps are in crm/VERCEL.md and the consolidated supabase/heartara-install.sql.
+
+
+## Current-main reconciliation
+
+After Penny reported importing GitHub into Vercel, the refreshed main ref was found to contain substantial later website work through 90c328b (the previous implicit fetch had not updated origin/main). The branch now merges that current main without reverting its pages, photos, seven review texts or SEO build. The current .crm-form calendar/contact/feedback forms now map to the Supabase API; the Vercel build wraps the existing 13-page SEO build instead of publishing older page copies. The legacy SQLite implementation and tests remain for compatibility but are not used by the Vercel production API. Live domain checks are blocked by this execution environment’s egress policy, so no public response or successful live submission is claimed.

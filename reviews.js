@@ -1,14 +1,40 @@
-const reviewGrid=document.querySelector('#published-reviews');
-const reviewBase=(window.HEARTARA_CRM?.apiBase||'').replace(/\/$/,'');
-// Legacy approved reviews remain displayed until the backend is connected and imported.
-const reviewURL=reviewBase?reviewBase+'/api/public/reviews':location.hostname.endsWith('github.io')?'reviews.json':'/api/public/reviews';
-fetch(reviewURL,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(reviews=>{
- reviewGrid.replaceChildren();if(!reviews.length){reviewGrid.textContent='No published reviews yet.';return;}
- let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const figure=document.createElement('figure');figure.className='review';const quote=document.createElement('blockquote'),text=document.createElement('p'),credit=document.createElement('figcaption');quote.append(text);figure.append(quote,credit);reviewGrid.append(figure);
- const controls=document.createElement('div');controls.className='actions';const counter=document.createElement('span');counter.setAttribute('aria-live','polite');
- const previous=document.createElement('button'),next=document.createElement('button'),pause=document.createElement('button');for(const b of [previous,next,pause]){b.type='button';b.className='button';}previous.textContent='Previous review';next.textContent='Next review';
- function render(){const review=reviews[index];text.textContent='“'+review.text+'”';credit.textContent=(review.name||'')+(review.year?' · '+review.year:'');counter.textContent=`${index+1} of ${reviews.length}`;pause.textContent=paused?'Play rotation':'Pause rotation';pause.setAttribute('aria-pressed',String(paused));}
- previous.onclick=()=>{paused=true;index=(index+reviews.length-1)%reviews.length;render()};next.onclick=()=>{paused=true;index=(index+1)%reviews.length;render()};pause.onclick=()=>{paused=!paused;render()};controls.append(previous,pause,next,counter);reviewGrid.after(controls);render();
- setInterval(()=>{if(!paused&&!document.hidden&&!controls.contains(document.activeElement)){index=(index+1)%reviews.length;render()}},10000);
-}).catch(()=>{reviewGrid.textContent='Reviews are temporarily unavailable. Please try again later.'});
+const grid=document.querySelector('#published-reviews');
+(async()=>{if(location.hostname.endsWith('github.io'))return [...grid.querySelectorAll('.review')].map(node=>({text:node.querySelector('blockquote p').textContent.replace(/^“|”$/g,''),name:node.querySelector('figcaption').textContent,year:''}));const response=await fetch(new URL('api/public/reviews',document.baseURI),{cache:'no-store'});if(!response.ok)throw Error('Reviews unavailable');return response.json();})().then(reviews=>{
+ if(!Array.isArray(reviews)||!reviews.length){grid.textContent='More experiences will be shared here soon.';return;}
+ grid.removeAttribute('aria-live');grid.style.display='grid';grid.style.gridTemplateColumns='minmax(0,1fr)';
+ grid.setAttribute('role','region');grid.setAttribute('aria-label','Client experiences');
+ const nodes=reviews.map(review=>{
+  const figure=document.createElement('figure');figure.className='review';figure.style.gridArea='1 / 1';
+  const quote=document.createElement('blockquote'),text=document.createElement('p');text.textContent='“'+review.text+'”';quote.append(text);figure.append(quote);
+  if(review.name){const credit=document.createElement('figcaption');credit.textContent=review.name+(review.year?' · '+review.year:'');figure.append(credit);}
+  return figure;
+ });
+ grid.replaceChildren(...nodes);
+ if(nodes.length===1)return;
+ const controls=document.createElement('div');controls.className='actions';controls.style.cssText='flex-wrap:wrap;justify-content:center;gap:14px;margin-top:22px;';
+ const makeButton=label=>{const button=document.createElement('button');button.type='button';button.className='button small';button.textContent=label;return button;};
+ const previous=makeButton('← Previous'),pause=makeButton('Pause rotation'),next=makeButton('Next →');
+ const count=document.createElement('span');count.style.fontSize='13px';
+ const status=document.createElement('span');status.setAttribute('role','status');status.style.cssText='position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);';
+ controls.append(previous,pause,count,next,status);grid.after(controls);
+ let index=0,timer=null,hovering=false,paused=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const show=(number,announce=false)=>{
+  index=(number+nodes.length)%nodes.length;
+  nodes.forEach((node,i)=>{node.style.visibility=i===index?'visible':'hidden';node.setAttribute('aria-hidden',String(i!==index));node.inert=i!==index;});
+  count.textContent=(index+1)+' of '+nodes.length;
+  if(announce)status.textContent='Review '+(index+1)+' of '+nodes.length+', from '+reviews[index].name;
+ };
+ const schedule=()=>{
+  clearInterval(timer);timer=null;pause.textContent=paused?'Play rotation':'Pause rotation';
+  pause.setAttribute('aria-label',paused?'Play automatic review rotation':'Pause automatic review rotation');
+  if(!paused&&!hovering&&!document.hidden)timer=setInterval(()=>show(index+1),10000);
+ };
+ previous.addEventListener('click',()=>{paused=true;show(index-1,true);schedule();});
+ next.addEventListener('click',()=>{paused=true;show(index+1,true);schedule();});
+ pause.addEventListener('click',()=>{paused=!paused;schedule();});
+ grid.addEventListener('mouseenter',()=>{hovering=true;schedule();});
+ grid.addEventListener('mouseleave',()=>{hovering=false;schedule();});
+ grid.addEventListener('focusin',()=>{paused=true;schedule();});
+ document.addEventListener('visibilitychange',schedule);
+ show(0);schedule();
+}).catch(()=>{grid.textContent='Reviews could not load. Please refresh or contact Penny directly.';});

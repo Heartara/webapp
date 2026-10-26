@@ -1,7 +1,6 @@
-const menu = document.querySelector('.menu');
-const navigation = document.querySelector('#navigation');
-menu?.addEventListener('click', () => { const open = menu.getAttribute('aria-expanded') !== 'true'; menu.setAttribute('aria-expanded', String(open)); navigation.classList.toggle('open', open); });
-navigation?.addEventListener('click', event => { if (event.target.closest('a')) { menu.setAttribute('aria-expanded', 'false'); navigation.classList.remove('open'); } });
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') { menu.setAttribute('aria-expanded', 'false'); navigation.classList.remove('open'); menu.focus(); } });
-const search = document.querySelector('#card-search');
-search?.addEventListener('input', () => { const query = search.value.trim().toLowerCase(); let count = 0; document.querySelectorAll('[data-card]').forEach(card => { card.hidden = !card.dataset.card.includes(query); if (!card.hidden) count++; }); document.querySelector('#card-count').textContent = query ? `${count} matching ${count === 1 ? 'card' : 'cards'}` : '44 main cards'; });
+const menu=document.querySelector('.menu'),navigation=document.querySelector('#navigation');
+menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));navigation?.classList.toggle('open',open);});
+navigation?.addEventListener('click',event=>{if(event.target.closest('a')){menu?.setAttribute('aria-expanded','false');navigation.classList.remove('open');}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu?.getAttribute('aria-expanded')==='true'){menu.setAttribute('aria-expanded','false');navigation?.classList.remove('open');menu.focus();}});
+const search=document.querySelector('#card-search');search?.addEventListener('input',()=>{const query=search.value.trim().toLowerCase();let count=0;document.querySelectorAll('[data-card]').forEach(card=>{card.hidden=!card.dataset.card.includes(query);if(!card.hidden)count++;});document.querySelector('#card-count').textContent=query?count+' matching cards':'44 main cards';});
+document.querySelectorAll('.logo-brand img').forEach(img=>{if(img.parentElement.classList.contains('logo-mark'))return;const frame=document.createElement('span');frame.className='logo-mark';frame.style.cssText='display:block;max-width:none;overflow:hidden;border-radius:50%;flex-shrink:0;line-height:0;mix-blend-mode:multiply;';img.before(frame);frame.append(img);img.style.objectViewBox='none';img.style.objectFit='contain';img.style.borderRadius='0';img.style.transform='scale(1.56)';});
