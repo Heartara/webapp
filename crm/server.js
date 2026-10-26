@@ -8,14 +8,17 @@ import {Webhook} from 'svix';
 import {HttpError,validateSubmission,uuid,csv} from './src/validation.js';
 import {resources,searchFields,filters,pickFields} from './src/resources.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
+function isPublicKey(key){if(typeof key!=='string')return false;if(key.startsWith('sb_publishable_'))return true;try{return JSON.parse(Buffer.from(key.split('.')[1],'base64url').toString()).role==='anon';}catch{return false;}}
 const options={auth:{persistSession:false,autoRefreshToken:false}};
 export function createApp(config={}) {
- const url=config.supabaseUrl||process.env.SUPABASE_URL, publicKey=config.publicKey||process.env.SUPABASE_PUBLISHABLE_KEY, secret=config.secret||process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const url=config.unconfigured?undefined:config.supabaseUrl||process.env.SUPABASE_URL, publicKey=config.unconfigured?undefined:config.publicKey||process.env.SUPABASE_PUBLISHABLE_KEY, secret=config.unconfigured?undefined:config.secret||process.env.SUPABASE_SERVICE_ROLE_KEY;
  const origins=(config.origins||process.env.ALLOWED_ORIGINS||'http://localhost:3100').split(',').map(x=>x.trim());
+ if(process.env.VERCEL_URL)origins.push('https://'+process.env.VERCEL_URL);
+ if(process.env.VERCEL_PROJECT_PRODUCTION_URL)origins.push('https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL);
  const admin=config.admin||(url&&secret?createClient(url,secret,options):null);
  const sessionClient=token=>createClient(url,publicKey,{...options,global:{headers:{Authorization:`Bearer ${token}`}}});
  async function identity(req){
-  if(!admin||!publicKey)throw new HttpError(503,'The CRM connection is not configured.');
+  if(!admin||!isPublicKey(publicKey))throw new HttpError(503,'The CRM connection is not configured.');
   const token=req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];if(!token)throw new HttpError(401,'Please sign in.');
   const {data,error}=await admin.auth.getUser(token);if(error||!data.user)throw new HttpError(401,'Your session has expired. Please sign in again.');
   const db=sessionClient(token);const staff=await db.from('staff_users').select('*').eq('id',data.user.id).eq('active',true).maybeSingle();
@@ -24,7 +27,8 @@ export function createApp(config={}) {
   return {db,staff:staff.data,user:data.user};
  }
  function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));}
- async function body(req){let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>18000)throw new HttpError(413,'The request is too large.');chunks.push(chunk)}try{return JSON.parse(Buffer.concat(chunks).toString())}catch{throw new HttpError(400,'Invalid request body.')}}
+ function rawBody(req){return new Promise((resolve,reject)=>{let size=0,chunks=[],tooLarge=false;req.on('data',chunk=>{size+=Buffer.byteLength(chunk);if(size>18000){if(!tooLarge)reject(new HttpError(413,'The request is too large.'));tooLarge=true;chunks=[];return;}chunks.push(Buffer.from(chunk));});req.on('end',()=>{if(!tooLarge)resolve(Buffer.concat(chunks));});req.on('error',reject);});}
+ async function body(req){const raw=await rawBody(req);try{return JSON.parse(raw.toString())}catch{throw new HttpError(400,'Invalid request body.')}}
  function check(result){if(result.error){const message=result.error.message||'';if(message.includes('IDEMPOTENCY_CONFLICT'))throw new HttpError(409,'This request reference was already used with different details. Start a new request.');if(message.includes('RATE_LIMIT'))throw new HttpError(429,'Too many requests. Please wait 15 minutes and retry.');if(result.error.code==='23P01')throw new HttpError(409,'That appointment overlaps another booking.');throw new HttpError(422,'The change could not be saved. Check the fields, permissions and scheduling rules.');}return result.data;}
  return http.createServer(async(req,res)=>{
   const requestId=randomUUID();res.setHeader('X-Request-ID',requestId);res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Cache-Control','no-store');
@@ -34,11 +38,11 @@ export function createApp(config={}) {
    if(origin){if(!origins.includes(origin))throw new HttpError(403,'This website origin is not enabled.');res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type,Authorization,Idempotency-Key');res.writeHead(204);return res.end();}
    const path=new URL(req.url,'http://localhost').pathname;const params=new URL(req.url,'http://localhost').searchParams;
-   if(path==='/api/health'&&req.method==='GET')return send(res,200,{status:'running',database_configured:Boolean(admin&&publicKey),email_mode:process.env.EMAIL_MODE||'sandbox'});
-   if(path==='/api/config'&&req.method==='GET'){if(!url||!publicKey)throw new HttpError(503,'Supabase connection is not configured.');return send(res,200,{supabaseUrl:url,publishableKey:publicKey});}
+   if(path==='/api/health'&&req.method==='GET')return send(res,200,{status:'running',database_configured:Boolean(admin&&isPublicKey(publicKey)),email_mode:process.env.EMAIL_MODE||'sandbox'});
+   if(path==='/api/config'&&req.method==='GET'){if(!url||!isPublicKey(publicKey))throw new HttpError(503,'Supabase connection is not configured.');return send(res,200,{supabaseUrl:url,publishableKey:publicKey});}
    if(path==='/api/provider/resend-webhook'&&req.method==='POST'){
     if(!admin||!process.env.RESEND_WEBHOOK_SECRET)throw new HttpError(503,'Delivery callback is not configured.');
-    let raw='',size=0;for await(const chunk of req){size+=chunk.length;if(size>18000)throw new HttpError(413,'Payload too large.');raw+=chunk.toString();}
+    const raw=(await rawBody(req)).toString();
     let event;try{new Webhook(process.env.RESEND_WEBHOOK_SECRET).verify(raw,{'svix-id':req.headers['svix-id'],'svix-timestamp':req.headers['svix-timestamp'],'svix-signature':req.headers['svix-signature']});event=JSON.parse(raw);}catch{throw new HttpError(401,'Invalid delivery signature.');}
     const state={'email.delivered':'delivered','email.bounced':'bounced','email.failed':'failed'}[event.type];
     if(state)check(await admin.rpc('record_notification_callback',{p_event:req.headers['svix-id'],p_provider_id:event.data.email_id,p_status:state}));
@@ -48,7 +52,7 @@ export function createApp(config={}) {
     if(!admin)throw new HttpError(503,'Requests are not available yet. Your request has not been sent.');
     const key=uuid(req.headers['idempotency-key']);const raw=await body(req);const {kind,payload}=validateSubmission(raw);
     const hash=createHash('sha256').update(JSON.stringify({kind,payload})).digest('hex');
-    const ip=process.env.TRUST_PROXY==='true'?(req.headers['x-forwarded-for']||'').split(',')[0].trim():req.socket.remoteAddress;
+    const ip=process.env.VERCEL==='1'?(req.headers['x-vercel-forwarded-for']||'').split(',')[0].trim()||'vercel-unavailable':process.env.TRUST_PROXY==='true'?(req.headers['x-forwarded-for']||'').split(',')[0].trim():req.socket.remoteAddress;
     const salt=process.env.RATE_LIMIT_SALT;if(!salt&&!config.rateSalt)throw new HttpError(503,'Request protection is not configured. Nothing was submitted.');
     const bucket=createHmac('sha256',config.rateSalt||salt).update(`${ip}|${Math.floor(Date.now()/900000)}`).digest('hex');
     return send(res,200,check(await admin.rpc('submit_heartara',{p_key:key,p_hash:hash,p_kind:kind,p_payload:payload,p_bucket:bucket})));

@@ -35,3 +35,5 @@ Visitors can write feedback in the homepage form, which prepares an email to Pen
 ## Supabase CRM development
 
 The private CRM, connected on-site forms and notification worker are in `crm/`. Run `npm ci`, `npm run crm:build` and `npm run crm:start`. See [CRM setup and deployment](crm/README.md) and the [implementation report](crm/IMPLEMENTATION.md). The hosted Supabase project is not connected yet; this development change must not be released to the live website until the backend, owner login and privacy settings are verified. Public site test: `npm test`. Full isolated database/API tests: `npm run crm:test:integration`.
+
+Vercel is the selected website/CRM host. Run `npm run vercel:build`; see [Vercel deployment setup](crm/VERCEL.md). Both the website and private `/crm/` use the same domain and Supabase-backed `/api/` routes.

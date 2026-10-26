@@ -1,0 +1,11 @@
+.git
+node_modules
+.env
+.env.*
+crm/.env
+crm/.env.*
+crm/tests
+crm/test-output
+crm/legacy-reviews-review.sql
+supabase
+attachments

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run vercel:build",
+  "outputDirectory": "dist",
+  "cleanUrls": false,
+  "functions": {
+    "api/handler.js": {
+      "maxDuration": 60
+    },
+    "api/notifications.js": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/handler?__route=health"
+    },
+    {
+      "source": "/api/config",
+      "destination": "/api/handler?__route=config"
+    },
+    {
+      "source": "/api/public/:path*",
+      "destination": "/api/handler?__route=public/:path*"
+    },
+    {
+      "source": "/api/private/:path*",
+      "destination": "/api/handler?__route=private/:path*"
+    },
+    {
+      "source": "/api/provider/:path*",
+      "destination": "/api/handler?__route=provider/:path*"
+    },
+    {
+      "source": "/crm",
+      "destination": "/crm/index.html"
+    },
+    {
+      "source": "/crm/",
+      "destination": "/crm/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    },
+    {
+      "source": "/crm/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://emsheprjvfwjwkamfxss.supabase.co; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+        }
+      ]
+    },
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/crm-public-config.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}

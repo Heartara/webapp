@@ -14,3 +14,12 @@ Verified locally:
 Read `crm/README.md` for connection, review/import, migration, hosting, notification and backup steps. The additional staff roles are strictly scoped/read-only in this release. Phase 1 is not claimed fully deployed or complete against every item of the larger brief while these setup and delegated-workflow items remain outstanding.
 
 Container packaging: a Dockerfile is provided, but its dependency-install stage stalled in this environment and the image build was not completed. Native Node startup, database/API tests and browser paths were verified. Validate the image on the chosen deployment host before relying on it.
+
+
+## Vercel integration follow-up
+
+The website and `/crm/` are prepared for one Vercel project. Added curated static output, Vercel Node API adapters, same-origin form routing, private-page cache/security headers, post-response notification processing and a separately protected retry endpoint. No private/server/environment files are copied to the public bundle. The official @vercel/node 27.0.2 development runtime was used to verify request-body handling and a durable synthetic form submission; signed callback handling was also exercised through that runtime. Three additional build/routing/cron checks cover Vercel packaging.
+
+Read-only hosted Supabase checks now succeed with the supplied keys, but GET requests for staff_users, services and business_settings return PGRST205: CRM tables are not installed. Supabase Auth reports public signup enabled. No hosted CRM submission, database migration, user creation or production email was performed. The earlier HEAD-only checks were not sufficient to prove table readiness; the GET checks establish the remaining setup requirement.
+
+User confirmed no Vercel project exists yet and asked for preparation. No Vercel deployment, custom domain or DNS change has been made. The exact remaining steps are in crm/VERCEL.md and the consolidated supabase/heartara-install.sql.

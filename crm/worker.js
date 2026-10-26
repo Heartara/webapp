@@ -17,12 +17,15 @@ export async function deliverBatch(db,{mode='sandbox',sandboxDir='/tmp/heartara-
  }
  return {processed:jobs.length};
 }
+export function notificationTransport(env=process.env) {
+ const mode=env.EMAIL_MODE||'sandbox';if(!['sandbox','resend'].includes(mode))throw Error('Choose sandbox or resend mail mode');
+ const recipient=env.OWNER_NOTIFICATION_EMAIL;
+ if(mode==='resend'&&(!env.RESEND_API_KEY||!env.EMAIL_FROM||!env.CRM_PUBLIC_URL||!recipient))throw Error('Verified sending configuration required');
+ const send=async(content,key)=>{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:env.EMAIL_FROM,to:[recipient],subject:content.subject,text:content.text})});if(!response.ok){const error=Error('Provider rejected notification');error.permanent=response.status>=400&&response.status<500&&response.status!==429;throw error;}const result=await response.json();return result.id;};
+ return {mode,send,recipient,crmUrl:env.CRM_PUBLIC_URL,sandboxDir:env.MAIL_PREVIEW_DIR||'/tmp/heartara-mail-preview'};
+}
 async function main(){
  const db=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
- const mode=process.env.EMAIL_MODE||'sandbox';if(!['sandbox','resend'].includes(mode))throw Error('Choose sandbox or resend mail mode');
- const recipient=process.env.OWNER_NOTIFICATION_EMAIL;
- if(mode==='resend'&&(!process.env.RESEND_API_KEY||!process.env.EMAIL_FROM||!process.env.CRM_PUBLIC_URL||!recipient))throw Error('Verified sending configuration required');
- const send=async(content,key)=>{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:process.env.EMAIL_FROM,to:[recipient],subject:content.subject,text:content.text})});if(!response.ok){const error=Error('Provider rejected notification');error.permanent=response.status>=400&&response.status<500&&response.status!==429;throw error;}const result=await response.json();return result.id;};
- const result=await deliverBatch(db,{mode,send,recipient,crmUrl:process.env.CRM_PUBLIC_URL,sandboxDir:process.env.MAIL_PREVIEW_DIR||'/tmp/heartara-mail-preview'});console.log(JSON.stringify(result));
+ const result=await deliverBatch(db,notificationTransport());console.log(JSON.stringify(result));
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))main().catch(()=>{console.error('Notification worker failed; check configuration and outbox. No message contents logged.');process.exitCode=1});

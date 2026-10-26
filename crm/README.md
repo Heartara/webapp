@@ -4,6 +4,10 @@ This is a server-backed CRM with a real PostgreSQL schema and Supabase Auth inte
 
 The target project URL supplied by Penny is `https://emsheprjvfwjwkamfxss.supabase.co`. This is a public identifier, not database access. Never commit keys, passwords, real client data, backups or `.env` files.
 
+## Vercel hosting
+
+Vercel is the selected hosting target. See [VERCEL.md](VERCEL.md) for the exact project settings, same-origin integration, one-time Supabase install and remaining launch steps. `npm run vercel:build` builds the curated website and private login shell; `api/` supplies Vercel Functions. No separate always-running Node server is needed on Vercel. The generic Node/Docker instructions below remain optional local/alternative deployment paths.
+
 ## Architecture and verified source
 
 - Existing static public website retained, with on-site enquiry/booking/feedback forms.
