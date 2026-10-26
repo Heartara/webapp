@@ -9,7 +9,7 @@ import {Webhook} from 'svix';
 const env={EMAIL_MODE:'resend',RESEND_API_KEY:'synthetic-send-key',RESEND_RECEIVING_API_KEY:'synthetic-read-key',EMAIL_FROM:'Heartara <sender@example.invalid>',RESEND_WEBHOOK_SECRET:'whsec_'+Buffer.from('synthetic-test-secret').toString('base64'),EMAIL_REPLY_DOMAIN:'reply.example.invalid'};
 const verification=randomUUID(),address=replyAddress(verification,env);
 const event={type:'email.received',data:{email_id:'synthetic-received-id'}};
-const email={id:event.data.email_id,to:[address],from:'Synthetic Visitor <visitor@example.invalid>',text:'CONFIRM\n\n> Please reply CONFIRM',headers:{}};
+const email={id:event.data.email_id,to:[address],from:'Synthetic Visitor <visitor@example.invalid>',text:'',headers:{}};
 test('confirmation remains off until migration, sending and receiving setup are present; diagnostics contain no keys',()=>{
  assert.equal(confirmationReadiness({},env).ready,false);
  assert.equal(confirmationReadiness({email_confirmation_enabled:false},env).ready,false);
@@ -18,12 +18,13 @@ test('confirmation remains off until migration, sending and receiving setup are 
  assert.ok(!JSON.stringify(confirmationReadiness({},env)).includes('synthetic-read-key'));
  assert.ok(address.split('@')[0].length<=64);assert.equal(replyAddress(verification,env),address);assert.notEqual(replyAddress(randomUUID(),env),address);
 });
-test('only affirmative first-line human replies to the expected domain reach the confirmation RPC',async()=>{
+test('blank and ordinary replies verify without a keyword; automatic replies and wrong destinations do not',async()=>{
  const calls=[];const db={rpc:async(name,args)=>{calls.push({name,args});return {data:true}}};
  const run=mail=>receiveConfirmation(db,event,'event-id',{env,request:async(url,options)=>{assert.equal(url,'https://api.resend.com/emails/receiving/synthetic-received-id');assert.equal(options.headers.Authorization,'Bearer synthetic-read-key');return {ok:true,json:async()=>mail}}});
  assert.equal(await run(email),true);assert.equal(calls[0].args.p_sender,'visitor@example.invalid');assert.equal(calls[0].args.p_hash,addressHash(address));assert.equal(calls[0].args.p_verification,verification);
- for(const change of [{text:'Away from office\nCONFIRM'},{text:'> CONFIRM'},{text:'Thanks!\n\nCONFIRM'},{headers:{'Auto-Submitted':'auto-replied'}},{headers:{Precedence:'bulk'}},{to:[address.replace('@reply.','@different.')]},{id:'mismatching-id'},{from:'bad address'}])assert.equal(await run({...email,...change}),false);
- assert.equal(calls.length,1);
+ assert.equal(await run({...email,text:'Thanks Penny!'}),true);assert.equal(await run({...email,text:null,html:'<div></div>'}),true);
+ for(const change of [{headers:{'Auto-Submitted':'auto-replied'}},{headers:{Precedence:'bulk'}},{to:[address.replace('@reply.','@different.')]},{id:'mismatching-id'},{from:'bad address'}])assert.equal(await run({...email,...change}),false);
+ assert.equal(calls.length,3);
  await assert.rejects(()=>receiveConfirmation(db,event,'x',{env,request:async()=>({ok:false})}),/temporarily/);
 });
 test('signed receiving webhook retrieves provider content; forged signature cannot trigger retrieval',async()=>{
@@ -50,7 +51,7 @@ test('confirmation worker uses visitor address, stable provider idempotency and 
   async rpc(name,args){if(name==='claim_confirmation_notifications')return {data:[{id:'job-id',deduplication_key:'email-confirmation:'+verification,attempts:1,created_at:new Date().toISOString(),lease_token:randomUUID()}]};finish.push(args);return {data:true}}
  };
  assert.equal((await deliverConfirmations(db,{env,mode:'resend',send:async(...args)=>{calls.push(args);return 'accepted'}})).processed,1);
- assert.equal(calls[0][2],'visitor@example.invalid');assert.equal(calls[0][3].replyTo,address);assert.equal(calls[0][1],'heartara-job-id');assert.match(calls[0][0].text,/reply.*CONFIRM/);assert.equal(updates[0].token_hash,addressHash(address));assert.equal(finish[0].p_status,'provider_accepted');
+ assert.equal(calls[0][2],'visitor@example.invalid');assert.equal(calls[0][3].replyTo,address);assert.equal(calls[0][1],'heartara-job-id');assert.match(calls[0][0].text,/Simply reply to this email/);assert.ok(!calls[0][0].text.includes('with CONFIRM'));assert.equal(updates[0].token_hash,addressHash(address));assert.equal(finish[0].p_status,'provider_accepted');
  const old=globalThis.fetch;try{globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.reply_to,address);return {ok:true,json:async()=>({id:'test-id'})}};await notificationTransport(env).send({subject:'Test',text:'Confirm'},'test-id','visitor@example.invalid',{replyTo:address});}finally{globalThis.fetch=old}
 });
 const database=process.env.CRM_TEST_DATABASE_URL;

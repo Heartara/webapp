@@ -24,9 +24,7 @@ export async function receiveConfirmation(db,event,eventId,{env=process.env,requ
  const mail=await response.json();if(mail.id!==emailId)return false;
  const headers=Object.fromEntries(Object.entries(mail.headers||{}).map(([k,v])=>[k.toLowerCase(),String(v).toLowerCase()]));
  if((headers['auto-submitted']&&headers['auto-submitted']!=='no')||/bulk|list|junk/.test(headers.precedence||'')||headers['x-autoreply']||headers['x-autorespond'])return false;
- // Only the visitor's first non-empty line counts, never quoted original instructions.
- const first=String(mail.text||'').trimStart().split(/\r?\n/)[0].trim();
- if(!/^confirm(?:ed)?[.!]?$/i.test(first))return false;
+ // A reply to the unique address is the proof; no keyword or message body is required.
  const sender=mailbox(mail.from);if(!sender)return false;
  for(const raw of mail.to||[]){
   const address=mailbox(raw);if(!address)continue;
@@ -52,7 +50,7 @@ export async function deliverConfirmations(db,{env=process.env,send,mode='sandbo
   if(v.token_hash&&v.token_hash!==hash)throw Object.assign(Error('Signing key changed'),{permanent:true});
   const saved=await db.from('email_verifications').update({token_hash:hash}).eq('id',id).eq('status','pending').select('id');
   if(saved.error||!saved.data?.length)throw Error('Could not prepare confirmation');
-  const content={subject:'Please confirm your Heartara enquiry',text:'Thank you for your enquiry to Heartara. Your message has been saved and Penny has been alerted.\n\nPlease reply to this email with CONFIRM on the first line to confirm that we can reach you at this address. If this arrived in spam, please move it to your inbox. This request expires in seven days.\n\nThis is email address confirmation, not a booking confirmation or marketing subscription. Penny will respond separately. This reply address only processes confirmations; please send further questions through the website.\n\nIf you did not send an enquiry, you can ignore this email.'};
+  const content={subject:'Please confirm your Heartara enquiry',text:'Thank you for your enquiry to Heartara. Your message has been saved for Penny.\n\nSimply reply to this email to confirm that we can reach you at this address. You do not need to type anything. If this arrived in spam, please move it to your inbox. This request expires in seven days.\n\nThis is email address confirmation, not a booking confirmation or marketing subscription. Penny will respond separately. This reply address only processes confirmations; please send further questions through the website.\n\nIf you did not send an enquiry, you can ignore this email.'};
   let provider=null;
   if(mode==='sandbox'){const {mkdir,writeFile}=await import('node:fs/promises');await mkdir(sandboxDir||'/tmp/heartara-mail-preview',{recursive:true,mode:0o700});await writeFile(`${sandboxDir||'/tmp/heartara-mail-preview'}/${job.id}.json`,JSON.stringify(content),{mode:0o600});}
   else provider=await send(content,`heartara-${job.id}`,v.email_original,{replyTo});

@@ -105,7 +105,17 @@ export function createApp(config={}) {
       const settings=check(await db.from('business_settings').select('*').eq('id',true).single());
       if(!confirmationReadiness(settings).ready)throw new HttpError(503,'Enable visitor email confirmation in Settings after completing receiving setup.');
      }
-     const input=await body(req);const args=Object.fromEntries(allowed[name].filter(k=>Object.hasOwn(input,k)).map(k=>[k,input[k]]));return send(res,200,{result:check(await db.rpc(name,args))});
+     const input=await body(req);const args=Object.fromEntries(allowed[name].filter(k=>Object.hasOwn(input,k)).map(k=>[k,input[k]]));
+     if(name==='convert_enquiry'&&!args.p_contact&&input.create_separate!==true){
+      const enquiry=check(await db.from('enquiries').select('contact_id,details').eq('id',uuid(args.p_enquiry)).single());
+      if(!enquiry.contact_id){const email=String(enquiry.details?.email||'').trim().toLowerCase();
+       if(email){const matches=check(await db.from('contacts').select('id').eq('email_normalised',email).is('archived_at',null).limit(2));
+        if(matches.length===1)args.p_contact=matches[0].id;
+        if(matches.length>1)throw new HttpError(409,'More than one contact uses this email. Choose the existing contact to link.');
+       }
+      }
+     }
+     return send(res,200,{result:check(await db.rpc(name,args))});
     }
     const parts=path.split('/').filter(Boolean),resource=parts[2],id=parts[3];if(!Object.hasOwn(resources,resource))throw new HttpError(404,'Not found.');
     if(req.method==='GET'){
@@ -113,6 +123,12 @@ export function createApp(config={}) {
      const q=params.get('q');if(q&&searchFields[resource]){if(q.length>100)throw new HttpError(422,'Search is too long.');const safe=q.replace(/[^\p{L}\p{N}@. _-]/gu,'');query=query.or(searchFields[resource].map(f=>`${f}.ilike.%${safe}%`).join(','));}
      if(params.get('from'))query=query.gte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('from'));if(params.get('to'))query=query.lte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('to'));
      const offset=Math.max(0,Number(params.get('offset'))||0);const result=await query.order(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':'id',{ascending:resource==='appointments'}).range(offset,offset+49);check(result);
+     if(owner&&resource==='enquiries'){
+      const emails=[...new Set(result.data.filter(e=>!e.contact_id).map(e=>String(e.details?.email||'').trim().toLowerCase()).filter(Boolean))];
+      if(emails.length){const matches=check(await db.from('contacts').select('id,name,email_original,email_normalised').in('email_normalised',emails).is('archived_at',null));
+       for(const entry of result.data)if(!entry.contact_id)entry.matching_contacts=matches.filter(c=>c.email_normalised===String(entry.details?.email||'').trim().toLowerCase());
+      }
+     }
      if(owner&&['enquiries','contacts'].includes(resource)){
       const entries=resource==='enquiries'?result.data:result.data.flatMap(c=>c.enquiries||[]);
       if(entries.length){const proof=await db.from('email_verifications').select('enquiry_id,status,expires_at,confirmed_at,requested_at').in('enquiry_id',entries.map(e=>e.id)).order('requested_at',{ascending:false});

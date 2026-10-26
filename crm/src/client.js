@@ -40,7 +40,7 @@ async function table(resource,items,target){
  const grid=element('table');const header=element('tr');for(const col of columns[resource]||['name'])header.append(element('th',columnNames[col]||friendly(col)));header.append(element('th','Actions'));grid.append(header);
  for(const row of items){const tr=element('tr');for(const col of columns[resource]||['name']){const cell=element('td',listValue(resource,row,col));if(col==='status'||col==='follow_up'){cell.replaceChildren(element('span',listValue(resource,row,col),'status-badge'));}tr.append(cell);}
  const actions=element('td');actions.append(button('Open',()=>detail(resource,row.id),'secondary'));
- if(resource==='enquiries'&&me.role==='owner')actions.append(button(row.contact_id?'View contact':'Create contact',()=>row.contact_id?openContact(row.contact_id):createContactFromEnquiry(row)));
+ if(resource==='enquiries'&&me.role==='owner')actions.append(button(contactActionLabel(row),()=>row.contact_id?openContact(row.contact_id):createContactFromEnquiry(row)));
  tr.append(actions);grid.append(tr);}
  const wrap=element('div',undefined,'table-wrap');wrap.append(grid);target.append(wrap);
 }
@@ -57,17 +57,18 @@ async function editEnquiryStatus(item,refresh){
  const staff=(await rows('staff_users')).rows;
  await edit('Update follow-up',[chooseState(item),choose('Assigned to','owner_id',staff,item.owner_id,true),field('Reason (required when closing)','closed_reason','textarea',item.closed_reason)],data=>patch('enquiries/'+item.id,{...data,owner_id:data.owner_id||null}),refresh);
 }
+function contactActionLabel(item){return item.contact_id?'View contact':item.matching_contacts?.length===1?'Link existing contact':item.matching_contacts?.length>1?'Choose existing contact':'Create contact';}
 async function createContactFromEnquiry(item){
  const person=enquiryPerson(item);
  const find=person.email?(await rows('contacts','email_normalised='+encodeURIComponent(person.email.trim().toLowerCase()))).rows:[];
  const matches=find.filter(c=>!c.archived_at&&c.email_normalised===person.email.trim().toLowerCase());
- const save=async existing=>{const result=await post('rpc/convert_enquiry',{p_enquiry:item.id,p_contact:existing||null});await openContact(result.result);status('Contact linked. This enquiry is waiting for response; update its follow-up below.');};
- if(!matches.length){await save(null);return;}
- await edit('Review an existing contact with this email',[
-  element('p','An email address can be shared. Choose an existing person only if you have confirmed they are the same person; otherwise create a separate contact.'),
+ const save=async existing=>{const result=await post('rpc/convert_enquiry',{p_enquiry:item.id,p_contact:existing||null});await openContact(result.result);status('Enquiry linked to contact. Update its follow-up below.');};
+ if(matches.length<=1){await save(matches[0]?.id);return;}
+ await edit('Choose the existing contact',[
+  element('p','More than one contact uses this email. Choose the person this enquiry belongs to.'),
   labelledValues([['Submitted name',person.name],['Submitted email',person.email]]),
-  field('Contact','contact_id','text','',[['','Create a separate contact'],...matches.map(c=>[c.id,c.name+' · '+(c.email_original||'No email')])])
- ],async data=>{const result=await post('rpc/convert_enquiry',{p_enquiry:item.id,p_contact:data.contact_id||null});return result.result;},id=>openContact(id));
+  field('Contact','contact_id','text',matches[0].id,[...matches.map(c=>[c.id,c.name+' · '+(c.email_original||'No email')]),['__new__','Create a separate person who shares this email']])
+ ],async data=>{const separate=data.contact_id==='__new__';const result=await post('rpc/convert_enquiry',{p_enquiry:item.id,p_contact:separate?null:data.contact_id,create_separate:separate});return result.result;},id=>openContact(id));
 }
 function confirmationLabel(value){return {pending:'Awaiting email confirmation',confirmed:'Email confirmed by reply',expired:'Email confirmation expired',superseded:'New confirmation requested',rate_limited:'Confirmation limit reached — try tomorrow',revoked:'Confirmation cancelled',not_requested:'Email confirmation not requested'}[value]||'Email confirmation setup pending';}
 async function enquiryDetail(item,screen){
@@ -87,8 +88,9 @@ async function enquiryDetail(item,screen){
  ]));screen.append(split);
  const message=element('section',undefined,'business-card');message.append(element('h2','Message'),element('p',item.original_message||'No additional message.','message-text'));screen.append(message);
  if(me.role==='owner'){
+  if(!item.contact_id&&item.matching_contacts?.length)screen.append(businessCard('Existing contacts with this email',item.matching_contacts.map(c=>['Contact',c.name+' · '+c.email_original])));
   const actions=element('div',undefined,'actions');
-  actions.append(button(item.contact_id?'View contact':'Create contact',()=>item.contact_id?openContact(item.contact_id):createContactFromEnquiry(item)),button('Update status',()=>editEnquiryStatus(item,()=>detail('enquiries',item.id)),'secondary'),button('Add follow-up task',()=>create('tasks',{enquiry_id:item.id,contact_id:item.contact_id}),'secondary'));
+  actions.append(button(contactActionLabel(item),()=>item.contact_id?openContact(item.contact_id):createContactFromEnquiry(item)),button('Update status',()=>editEnquiryStatus(item,()=>detail('enquiries',item.id)),'secondary'),button('Add follow-up task',()=>create('tasks',{enquiry_id:item.id,contact_id:item.contact_id}),'secondary'));
   if(item.status!=='awaiting_customer'&&item.status!=='closed')actions.append(button('Replied — waiting for client',async()=>{await patch('enquiries/'+item.id,{status:'awaiting_customer'});await detail('enquiries',item.id)},'secondary'));
   if(item.email_confirmation&&item.email_confirmation!=='confirmed'&&!['spam','closed'].includes(item.status))actions.append(button('Request email confirmation',async()=>{await post('rpc/request_email_confirmation',{p_enquiry:item.id});await post('notifications/process',{});await detail('enquiries',item.id);status('Confirmation request processed. Check Email notifications for sending status.');},'secondary'));
   screen.append(actions);

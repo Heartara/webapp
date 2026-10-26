@@ -32,7 +32,7 @@ for(const form of document.querySelectorAll('.crm-form')){
    let result;try{result=await response.json();}catch{throw Error('Your request could not be saved. Keep this page open and retry.');}
    const data={saved:result.received===true};if(!response.ok||data.saved!==true)throw Error(submissionError(result,response.status));
    status.textContent=form.dataset.kind==='booking'?'Your booking request has been saved. Penny will respond personally. Your appointment is not confirmed until Penny approves it.':form.dataset.kind==='feedback'?'Thank you. Your feedback has been saved privately for Penny to review. It is not published automatically.':'Your enquiry has been saved. Penny will respond personally.';
-   if(result.email_confirmation_requested)status.textContent+=' A confirmation email has been requested. Check your inbox and spam folder, then reply CONFIRM to that email. Penny can still review your enquiry while confirmation is pending.';
+   if(result.email_confirmation_requested)status.textContent+=' A confirmation email has been requested. Check your inbox and spam folder, then simply reply to that email—no special wording needed. Penny can still review your enquiry while confirmation is pending.';
    recordSaved(form.dataset.kind);form.reset();requestId.value=crypto.randomUUID();lastPayload='';update();
   }catch(error){status.textContent=(error.message==='Failed to fetch'?'Your request has not been sent. Please retry when the connection is available.':error.message)+' Your entries are still here for a safe retry.';}
   finally{busy=false;button.disabled=false;}
