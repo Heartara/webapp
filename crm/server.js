@@ -7,18 +7,19 @@ import {createClient} from '@supabase/supabase-js';
 import {Webhook} from 'svix';
 import {HttpError,validateSubmission,uuid,csv} from './src/validation.js';
 import {resources,searchFields,filters,pickFields} from './src/resources.js';
+import {resolveConfiguration} from './src/configuration.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
-function isPublicKey(key){if(typeof key!=='string')return false;if(key.startsWith('sb_publishable_'))return true;try{return JSON.parse(Buffer.from(key.split('.')[1],'base64url').toString()).role==='anon';}catch{return false;}}
 const options={auth:{persistSession:false,autoRefreshToken:false}};
 export function createApp(config={}) {
- const url=config.unconfigured?undefined:config.supabaseUrl||process.env.SUPABASE_URL, publicKey=config.unconfigured?undefined:config.publicKey||process.env.SUPABASE_PUBLISHABLE_KEY, secret=config.unconfigured?undefined:config.secret||process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const connection=resolveConfiguration(config);
+ const {url,publicKey,secret}=connection;
  const origins=(config.origins||process.env.ALLOWED_ORIGINS||'http://localhost:3100').split(',').map(x=>x.trim());
  if(process.env.VERCEL_URL)origins.push('https://'+process.env.VERCEL_URL);
  if(process.env.VERCEL_PROJECT_PRODUCTION_URL)origins.push('https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL);
- const admin=config.admin||(url&&secret?createClient(url,secret,options):null);
+ const admin=config.admin||(connection.ready&&url&&secret?createClient(url,secret,options):null);
  const sessionClient=token=>createClient(url,publicKey,{...options,global:{headers:{Authorization:`Bearer ${token}`}}});
  async function identity(req){
-  if(!admin||!isPublicKey(publicKey))throw new HttpError(503,'The CRM connection is not configured.');
+  if(!admin||!connection.ready)throw new HttpError(503,connection.message||'The CRM connection is not configured.');
   const token=req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];if(!token)throw new HttpError(401,'Please sign in.');
   const {data,error}=await admin.auth.getUser(token);if(error||!data.user)throw new HttpError(401,'Your session has expired. Please sign in again.');
   const db=sessionClient(token);const staff=await db.from('staff_users').select('*').eq('id',data.user.id).eq('active',true).maybeSingle();
@@ -38,8 +39,8 @@ export function createApp(config={}) {
    if(origin){if(!origins.includes(origin))throw new HttpError(403,'This website origin is not enabled.');res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type,Authorization,Idempotency-Key');res.writeHead(204);return res.end();}
    const path=new URL(req.url,'http://localhost').pathname;const params=new URL(req.url,'http://localhost').searchParams;
-   if(path==='/api/health'&&req.method==='GET')return send(res,200,{status:'running',database_configured:Boolean(admin&&isPublicKey(publicKey)),email_mode:process.env.EMAIL_MODE||'sandbox'});
-   if(path==='/api/config'&&req.method==='GET'){if(!url||!isPublicKey(publicKey))throw new HttpError(503,'Supabase connection is not configured.');return send(res,200,{supabaseUrl:url,publishableKey:publicKey});}
+   if(path==='/api/health'&&req.method==='GET')return send(res,200,{status:'running',database_configured:Boolean(admin&&connection.ready),email_mode:process.env.EMAIL_MODE||'sandbox'});
+   if(path==='/api/config'&&req.method==='GET'){if(!connection.ready)throw new HttpError(503,connection.message);return send(res,200,{supabaseUrl:url,publishableKey:publicKey});}
    if(path==='/api/provider/resend-webhook'&&req.method==='POST'){
     if(!admin||!process.env.RESEND_WEBHOOK_SECRET)throw new HttpError(503,'Delivery callback is not configured.');
     const raw=(await rawBody(req)).toString();

@@ -1,3 +1,4 @@
+import {resolveConfiguration} from '../crm/src/configuration.js';
 import { createClient } from '@supabase/supabase-js';
 import { timingSafeEqual } from 'node:crypto';
 import { deliverBatch, notificationTransport } from '../crm/worker.js';
@@ -9,7 +10,8 @@ export default async function handler(req, res) {
   // Cron must never discard real queued notifications into ephemeral sandbox files.
   if ((process.env.EMAIL_MODE || 'sandbox') !== 'resend') { res.setHeader('Content-Type','application/json'); return res.end(JSON.stringify({processed:0,disabled:true,reason:'Live sender is not enabled; notifications remain queued.'})); }
   try {
-    const db=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+    const connection=resolveConfiguration();if(!connection.ready)throw Error('Supabase connection is not configured');
+  const db=createClient(connection.url,connection.secret,{auth:{persistSession:false,autoRefreshToken:false}});
     const transport=notificationTransport(process.env);
     const result=await deliverBatch(db,transport);
     res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));

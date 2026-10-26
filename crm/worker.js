@@ -1,6 +1,7 @@
 import {createClient} from '@supabase/supabase-js';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
+import {resolveConfiguration} from './src/configuration.js';
 export async function deliverBatch(db,{mode='sandbox',sandboxDir='/tmp/heartara-mail-preview',send,crmUrl,recipient}={}){
  const settings=await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single();if(settings.error)throw Error('Notification settings unavailable');
  if(mode!=='sandbox'&&(!settings.data.notification_enabled||!recipient||recipient!==settings.data.notification_email))return {processed:0,disabled:true};
@@ -25,7 +26,8 @@ export function notificationTransport(env=process.env) {
  return {mode,send,recipient,crmUrl:env.CRM_PUBLIC_URL,sandboxDir:env.MAIL_PREVIEW_DIR||'/tmp/heartara-mail-preview'};
 }
 async function main(){
- const db=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+ const connection=resolveConfiguration();if(!connection.ready)throw Error('Supabase connection is not configured');
+ const db=createClient(connection.url,connection.secret,{auth:{persistSession:false,autoRefreshToken:false}});
  const result=await deliverBatch(db,notificationTransport());console.log(JSON.stringify(result));
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))main().catch(()=>{console.error('Notification worker failed; check configuration and outbox. No message contents logged.');process.exitCode=1});
