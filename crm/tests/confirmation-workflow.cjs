@@ -1,0 +1,18 @@
+const {chromium}=require('playwright');
+const {Client}=require('pg');
+const {randomUUID,createHash}=require('node:crypto');
+(async()=>{
+ const db=new Client({connectionString:'postgresql://postgres@127.0.0.1:55432/heartara_test'});await db.connect();
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
+ try{
+  await db.query('update public.business_settings set email_confirmation_enabled=true');
+  const page=await browser.newPage({viewport:{width:1200,height:1000}}),name='Confirmation browser '+Date.now();
+  await page.goto('http://127.0.0.1:3110/contact.html?topic=oracle');await page.fill('#enquiry-name',name);await page.fill('#enquiry-email','confirmation-browser@example.invalid');await page.fill('#enquiry-message','Synthetic confirmation browser check.');await page.check('[name=consent]');await page.getByRole('button',{name:'Send my enquiry'}).click();await page.locator('.form-status').filter({hasText:'reply CONFIRM'}).waitFor();
+  await page.goto('http://127.0.0.1:3110/crm/');await page.fill('#login-email','owner@example.invalid');await page.fill('#login-password','synthetic-test-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.locator('#workspace:not([hidden])').waitFor();
+  await page.locator('#crm-nav').getByRole('button',{name:'Enquiries',exact:true}).click();await page.locator('.toolbar [name=q]').fill(name);await page.getByRole('button',{name:'Apply filters'}).click();let row=page.locator('#list-results tr').filter({hasText:name});await row.getByText('Awaiting email confirmation',{exact:true}).waitFor();await row.getByRole('button',{name:'Create contact',exact:true}).click();await page.getByRole('heading',{name:'Contact details',exact:true}).waitFor();await page.locator('.enquiry-history').getByText('Awaiting email confirmation',{exact:true}).waitFor();await page.locator('.enquiry-history').getByText('Waiting for response',{exact:true}).waitFor();
+  // Simulate the service-only recording step after a validated incoming reply. No provider emails are sent.
+  const verification=(await db.query("select v.id from public.email_verifications v join public.enquiries e on e.id=v.enquiry_id where e.details->>'name'=$1",[name])).rows[0];const hash=createHash('sha256').update(randomUUID()).digest('hex');await db.query('update public.email_verifications set token_hash=$1 where id=$2',[hash,verification.id]);await db.query('select public.confirm_email_reply($1,$2,$3,$4,$5)',[randomUUID(),randomUUID(),verification.id,hash,'confirmation-browser@example.invalid']);
+  await page.locator('#crm-nav').getByRole('button',{name:'Enquiries',exact:true}).click();await page.locator('.toolbar [name=q]').fill(name);await page.getByRole('button',{name:'Apply filters'}).click();row=page.locator('#list-results tr').filter({hasText:name});await row.getByText('Email confirmed by reply',{exact:true}).waitFor();await row.getByRole('button',{name:'View contact',exact:true}).click();await page.locator('.enquiry-history').getByText('Email confirmed by reply',{exact:true}).waitFor();await page.locator('.enquiry-history').getByText('Waiting for response',{exact:true}).waitFor();await page.locator('#screen').screenshot({path:'/tmp/heartara-email-confirmation-contact.png'});
+  console.log('PASS: visitor instructions, pending and confirmed email status in enquiry inbox and linked contact; follow-up stays waiting for response. No real emails sent.');
+ }finally{await db.query('update public.business_settings set email_confirmation_enabled=false');await db.end();await browser.close()}
+})().catch(error=>{console.error(error);process.exit(1)});

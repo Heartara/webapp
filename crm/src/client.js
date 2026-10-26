@@ -4,7 +4,7 @@ const recoveryMode=new URLSearchParams(location.hash.slice(1)).get('type')==='re
 let auth,me,current='Overview',page=0,session,mfaFactor,stale=0;
 const $=s=>document.querySelector(s),status=text=>{$('#global-status').textContent=text;};
 const names={'Overview':'','Enquiries':'enquiries','Contacts':'contacts','Appointments':'appointments','Packages & Journeys':'','Feedback':'feedback','Tasks':'tasks','Services':'services','Settings':''};
-const columns={enquiries:['person_name','person_email','topic','status','received_at'],contacts:['name','email_original','interest','follow_up'],appointments:['starts_at','ends_at','status','mode'],feedback:['display_name','public_text','status'],tasks:['title','due_at','status'],services:['name','reiki_level','duration_minutes','price_minor','status'],client_packages:['contact_id','payment_state'],client_journeys:['name','mode','status']};
+const columns={enquiries:['person_name','person_email','topic','status','email_confirmation','received_at'],contacts:['name','email_original','interest','follow_up'],appointments:['starts_at','ends_at','status','mode'],feedback:['display_name','public_text','status'],tasks:['title','due_at','status'],services:['name','reiki_level','duration_minutes','price_minor','status'],client_packages:['contact_id','payment_state'],client_journeys:['name','mode','status']};
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 function button(text,fn,cls){const b=element('button',text,cls);b.type='button';b.addEventListener('click',async()=>{b.disabled=true;try{await fn();}catch(error){status(error.message);}finally{b.disabled=false;}});return b;}
 function display(value,key=''){if(value===null||value===undefined)return '—';if(key.endsWith('_at'))return new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Brisbane',dateStyle:'medium',timeStyle:'short'}).format(new Date(value));if(key==='price_minor')return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(value/100);if(typeof value==='object')return JSON.stringify(value);return String(value);}
@@ -27,6 +27,7 @@ function toolbar(container){
  bar.onsubmit=event=>{event.preventDefault();const params=new URLSearchParams(new FormData(bar));for(const [key,value]of [...params])if(!value)params.delete(key);if(params.get('to'))params.set('to',params.get('to')+'T23:59:59Z');page=0;loadList(resource,container,params.toString()).catch(error=>status(error.message));};container.append(bar);
 }
 function listValue(resource,row,key){
+ if(key==='email_confirmation')return confirmationLabel(row.email_confirmation);
  if(key==='person_name')return enquiryPerson(row).name;
  if(key==='person_email')return enquiryPerson(row).email||'—';
  if(key==='interest')return contactFollowUp(row).interest;
@@ -68,13 +69,14 @@ async function createContactFromEnquiry(item){
   field('Contact','contact_id','text','',[['','Create a separate contact'],...matches.map(c=>[c.id,c.name+' · '+(c.email_original||'No email')])])
  ],async data=>{const result=await post('rpc/convert_enquiry',{p_enquiry:item.id,p_contact:data.contact_id||null});return result.result;},id=>openContact(id));
 }
+function confirmationLabel(value){return {pending:'Awaiting email confirmation',confirmed:'Email confirmed by reply',expired:'Email confirmation expired',superseded:'New confirmation requested',rate_limited:'Confirmation limit reached — try tomorrow',revoked:'Confirmation cancelled',not_requested:'Email confirmation not requested'}[value]||'Email confirmation setup pending';}
 async function enquiryDetail(item,screen){
  const person=enquiryPerson(item),details=submittedDetails(item);
  screen.append(element('h1',person.name));
  const summary=element('div',undefined,'enquiry-summary');summary.append(element('span',topicName(item.topic),'interest-badge'),element('span',stateName(item.status),'status-badge'));screen.append(summary);
  const split=element('div',undefined,'split');
  split.append(businessCard('Person',[
-  ['Name',person.name],['Email',person.email],['Phone',person.phone],['Preferred reply',friendly(person.preference)]
+  ['Email confirmation',confirmationLabel(item.email_confirmation)],['Name',person.name],['Email',person.email],['Phone',person.phone],['Preferred reply',friendly(person.preference)]
  ]));
  let assigned='Not assigned';if(item.owner_id){const member=(await api('staff_users/'+item.owner_id)).rows[0];assigned=member?.display_name||'Assigned staff member';}
  split.append(businessCard('Enquiry',[
@@ -88,6 +90,7 @@ async function enquiryDetail(item,screen){
   const actions=element('div',undefined,'actions');
   actions.append(button(item.contact_id?'View contact':'Create contact',()=>item.contact_id?openContact(item.contact_id):createContactFromEnquiry(item)),button('Update status',()=>editEnquiryStatus(item,()=>detail('enquiries',item.id)),'secondary'),button('Add follow-up task',()=>create('tasks',{enquiry_id:item.id,contact_id:item.contact_id}),'secondary'));
   if(item.status!=='awaiting_customer'&&item.status!=='closed')actions.append(button('Replied — waiting for client',async()=>{await patch('enquiries/'+item.id,{status:'awaiting_customer'});await detail('enquiries',item.id)},'secondary'));
+  if(item.email_confirmation&&item.email_confirmation!=='confirmed'&&!['spam','closed'].includes(item.status))actions.append(button('Request email confirmation',async()=>{await post('rpc/request_email_confirmation',{p_enquiry:item.id});await post('notifications/process',{});await detail('enquiries',item.id);status('Confirmation request processed. Check Email notifications for sending status.');},'secondary'));
   screen.append(actions);
  }
 }
@@ -105,6 +108,7 @@ async function contactDetail(item,screen){
  for(const enquiry of data.rows){
   const card=element('article',undefined,'business-card enquiry-history');
   card.append(element('h3',topicName(enquiry.topic)),element('span',stateName(enquiry.status),'status-badge'),element('p','Received '+display(enquiry.received_at,'received_at'),'muted'),element('p',enquiry.original_message||'No additional message.','message-text'));
+  card.append(element('p',confirmationLabel(enquiry.email_confirmation),'muted'));
   const controls=element('div',undefined,'actions');controls.append(button('Update status',()=>editEnquiryStatus(enquiry,()=>openContact(item.id))),button('Open enquiry',()=>detail('enquiries',enquiry.id),'secondary'));card.append(controls);screen.append(card);
  }
  if(data.total>data.rows.length)screen.append(element('p',`Showing the latest ${data.rows.length} of ${data.total} enquiries. Use the enquiries inbox to search older records.`,'muted'));
@@ -164,10 +168,18 @@ async function settings(screen){if(me.role!=='owner'){screen.append(element('p',
   ['Address check',email.recipient_matches?'Matches saved recipient':'OWNER_NOTIFICATION_EMAIL differs from the saved recipient']
  ]));
  if(email.configured&&!email.enabled)screen.append(button('Enable email notifications',async()=>{await patch('business_settings/true',{notification_enabled:true});await navigate('Settings');}));
- if(email.ready)screen.append(button('Send queued notifications now',async()=>{const result=await post('notifications/process',{});await navigate('Settings');status(`${result.processed||0} queued notifications processed. Check their status below; provider accepted is not proof of inbox delivery.`);}));
+ if(email.ready||email.confirmation?.ready)screen.append(button('Send queued notifications now',async()=>{const result=await post('notifications/process',{});await navigate('Settings');status(`${result.processed||0} queued notifications processed. Check their status below; provider accepted is not proof of inbox delivery.`);}));
  if(!email.configured)screen.append(element('p','Connect Resend in Vercel with RESEND_API_KEY, EMAIL_FROM and EMAIL_MODE=resend, then redeploy. Penny’s saved email address is used as the recipient. No notification is sent until setup is complete.','muted'));
+ screen.append(element('h2','Visitor email confirmation'));
+ const confirmation=email.confirmation;
+ if(confirmation){
+  screen.append(element('p',confirmation.ready?'Reply confirmation is enabled. Penny is alerted immediately; visitor confirmation is tracked separately.':'Reply confirmation is not active. Penny’s alerts continue separately.'));
+  if(!confirmation.installed)screen.append(element('p','Install incremental migration 202610260004_email_confirmation.sql in Supabase.'));
+  if(confirmation.missing.length)screen.append(element('p','Receiving setup needed: '+confirmation.missing.join(', '),'muted'));
+  if(confirmation.configured&&!confirmation.enabled)screen.append(button('Enable visitor confirmation emails',async()=>{await post('confirmations/enable',{});await navigate('Settings');}));
+ }
  const jobs=await rows('notification_outbox');
- for(const job of jobs.rows){const div=element('div',undefined,'record');const label={queued:'Waiting to send',processing:'Sending',provider_accepted:'Accepted by email service',delivered:'Delivered',bounced:'Bounced',failed:'Failed',sandboxed:'Preview only — no email sent'}[job.status]||friendly(job.status);div.append(element('p',`${label} · ${job.attempts} attempts`));if(job.safe_error)div.append(element('p',job.safe_error,'muted'));if(['failed','bounced'].includes(job.status))div.append(button('Queue for retry after checking the sender',()=>post('rpc/retry_notification',{p_id:job.id}).then(()=>navigate('Settings'))));screen.append(div);}
+ for(const job of jobs.rows){const div=element('div',undefined,'record');const label={queued:'Waiting to send',processing:'Sending',provider_accepted:'Accepted by email service',delivered:'Delivered',bounced:'Bounced',failed:'Failed',sandboxed:'Preview only — no email sent'}[job.status]||friendly(job.status);div.append(element('p',`${job.template==='customer_email_confirmation'?'Visitor confirmation':'Penny’s alert'} · ${label} · ${job.attempts} attempts`));if(job.safe_error)div.append(element('p',job.safe_error,'muted'));if(['failed','bounced'].includes(job.status))div.append(button('Queue for retry after checking the sender',()=>post('rpc/retry_notification',{p_id:job.id}).then(()=>navigate('Settings'))));screen.append(div);}
 
  screen.append(element('h2','Data management'),element('p','Archive contacts from their profile. Erasure and backup restoration require the reviewed database procedure in crm/README.md; archival is not deletion. No clinical records should be entered.'));}
 async function exportCSV(resource){const token=(await auth.auth.getSession()).data.session.access_token;const response=await fetch('/api/private/export?resource='+resource,{headers:{Authorization:'Bearer '+token}});if(!response.ok)throw Error('Export unavailable');const url=URL.createObjectURL(await response.blob());const link=element('a');link.href=url;link.download=`heartara-${resource}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}

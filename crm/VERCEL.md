@@ -97,3 +97,7 @@ Create an account at https://resend.com using Penny’s business email. In Resen
 In Vercel’s webapp project, add `RESEND_API_KEY` as Secret, `EMAIL_FROM=Heartara <notifications@heartarahealing.com>`, and `EMAIL_MODE=resend` for Production and Preview, then redeploy. The CRM now uses its saved notification recipient, `heartarahealing@gmail.com`; duplicating it in OWNER_NOTIFICATION_EMAIL is optional (if set, it must match). CRM_PUBLIC_URL is optional and defaults to the private login on the actual Heartara domain.
 
 In the newest CRM deployment, open Settings → Email notifications. The page shows missing configuration names without revealing keys. Once configured, click Enable email notifications, then Send queued notifications now. That action sends real owner alerts, including a previously queued, never-attempted submission. Confirm Penny receives the alert; provider accepted is not proof of inbox delivery. Verified webhook callbacks can supply delivered/bounced states. No sender domain or provider API key has been configured automatically, and no live email was sent during development.
+
+## Visitor confirmation emails
+
+Reply-based visitor confirmation is a separate optional integration. Penny’s alerts remain immediate. Follow [EMAIL-CONFIRMATION.md](EMAIL-CONFIRMATION.md) for the incremental SQL upgrade, receiving subdomain, receiving API key and signed webhook setup. It remains disabled until the owner activates it after setup. No real visitor confirmation emails were sent during development.

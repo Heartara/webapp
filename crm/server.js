@@ -1,3 +1,4 @@
+import {confirmationReadiness,receiveConfirmation} from './src/email-confirmation.js';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -47,6 +48,7 @@ export function createApp(config={}) {
     if(!admin||!process.env.RESEND_WEBHOOK_SECRET)throw new HttpError(503,'Delivery callback is not configured.');
     const raw=(await rawBody(req)).toString();
     let event;try{new Webhook(process.env.RESEND_WEBHOOK_SECRET).verify(raw,{'svix-id':req.headers['svix-id'],'svix-timestamp':req.headers['svix-timestamp'],'svix-signature':req.headers['svix-signature']});event=JSON.parse(raw);}catch{throw new HttpError(401,'Invalid delivery signature.');}
+    if(event.type==='email.received')await receiveConfirmation(admin,event,req.headers['svix-id'],{request:config.receivingFetch||fetch});
     const state={'email.delivered':'delivered','email.bounced':'bounced','email.failed':'failed'}[event.type];
     if(state)check(await admin.rpc('record_notification_callback',{p_event:req.headers['svix-id'],p_provider_id:event.data.email_id,p_status:state}));
     return send(res,200,{received:true});
@@ -58,7 +60,10 @@ export function createApp(config={}) {
     const ip=process.env.VERCEL==='1'?(req.headers['x-vercel-forwarded-for']||'').split(',')[0].trim()||'vercel-unavailable':process.env.TRUST_PROXY==='true'?(req.headers['x-forwarded-for']||'').split(',')[0].trim():req.socket.remoteAddress;
     const salt=rateLimitKey({explicit:config.rateSalt||process.env.RATE_LIMIT_SALT,secret});if(!salt)throw new HttpError(503,'Request protection is not configured. Nothing was submitted.');
     const bucket=createHmac('sha256',salt).update(`${ip}|${Math.floor(Date.now()/900000)}`).digest('hex');
-    return send(res,200,check(await admin.rpc('submit_heartara',{p_key:key,p_hash:hash,p_kind:kind,p_payload:payload,p_bucket:bucket})));
+    const receipt=check(await admin.rpc('submit_heartara',{p_key:key,p_hash:hash,p_kind:kind,p_payload:payload,p_bucket:bucket}));
+    // Optional upgrade metadata cannot turn a durable saved submission into an error.
+    try{const proof=await admin.from('email_verifications').select('status').eq('submission_id',receipt.reference).eq('status','pending').limit(1);if(!proof.error&&proof.data?.length)receipt.email_confirmation_requested=true;}catch{}
+    return send(res,200,receipt);
    }
    if(path==='/api/public/reviews'&&req.method==='GET'){if(!admin)throw new HttpError(503,'Reviews are temporarily unavailable.');const rows=check(await admin.rpc('published_feedback'));return send(res,200,rows.map(r=>({id:r.id,name:r.display_name,text:r.public_text,year:r.display_year||''})));}
    if(path.startsWith('/api/private/')){
@@ -66,13 +71,19 @@ export function createApp(config={}) {
     if(path==='/api/private/me')return send(res,200,staff);
     if(path==='/api/private/notifications/config'&&req.method==='GET'){
      if(!owner)throw new HttpError(403,'Owner only.');
-     const settings=check(await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single());
-     return send(res,200,emailReadiness(settings));
+     const settings=check(await db.from('business_settings').select('*').eq('id',true).single());
+     return send(res,200,{...emailReadiness(settings),confirmation:confirmationReadiness(settings)});
+    }
+    if(path==='/api/private/confirmations/enable'&&req.method==='POST'){
+     if(!owner)throw new HttpError(403,'Owner only.');
+     const settings=check(await db.from('business_settings').select('*').eq('id',true).single());
+     if(!confirmationReadiness(settings).configured)throw new HttpError(503,'Install the email confirmation upgrade and configure Resend receiving first.');
+     check(await db.from('business_settings').update({email_confirmation_enabled:true}).eq('id',true));return send(res,200,{enabled:true});
     }
     if(path==='/api/private/notifications/process'&&req.method==='POST'){
      if(!owner)throw new HttpError(403,'Owner only.');
-     const settings=check(await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single());
-     if(!emailReadiness(settings).ready)throw new HttpError(503,'Email alerts are not ready. Check the sending service, saved recipient and alert switch in Settings.');
+     const settings=check(await db.from('business_settings').select('*').eq('id',true).single());
+     if(!emailReadiness(settings).ready&&!confirmationReadiness(settings).ready)throw new HttpError(503,'Email alerts are not ready. Check the sending service, saved recipient and alert switch in Settings.');
      return send(res,200,await processNotifications());
     }
 
@@ -90,14 +101,25 @@ export function createApp(config={}) {
      check(await admin.from('staff_users').upsert({id:input.user_id,display_name:String(input.display_name||'').slice(0,120),role:input.role,active:input.active!==false,require_mfa:input.require_mfa===true}));return send(res,200,{saved:true});
     }
     if(path.startsWith('/api/private/rpc/')&&req.method==='POST'){
-     if(!owner)throw new HttpError(403,'Owner only.');const name=path.split('/').at(-1);const allowed={convert_enquiry:['p_enquiry','p_contact'],record_consent:['p_contact','p_purpose','p_granted'],merge_contacts:['p_keep','p_remove','p_name','p_email','p_phone'],retry_notification:['p_id'],package_balances:[],erase_contact:['p_contact','p_confirmation']};if(!allowed[name])throw new HttpError(404,'Not found.');const input=await body(req);const args=Object.fromEntries(allowed[name].filter(k=>Object.hasOwn(input,k)).map(k=>[k,input[k]]));return send(res,200,{result:check(await db.rpc(name,args))});
+     if(!owner)throw new HttpError(403,'Owner only.');const name=path.split('/').at(-1);const allowed={request_email_confirmation:['p_enquiry'],convert_enquiry:['p_enquiry','p_contact'],record_consent:['p_contact','p_purpose','p_granted'],merge_contacts:['p_keep','p_remove','p_name','p_email','p_phone'],retry_notification:['p_id'],package_balances:[],erase_contact:['p_contact','p_confirmation']};if(!allowed[name])throw new HttpError(404,'Not found.');if(name==='request_email_confirmation'){
+      const settings=check(await db.from('business_settings').select('*').eq('id',true).single());
+      if(!confirmationReadiness(settings).ready)throw new HttpError(503,'Enable visitor email confirmation in Settings after completing receiving setup.');
+     }
+     const input=await body(req);const args=Object.fromEntries(allowed[name].filter(k=>Object.hasOwn(input,k)).map(k=>[k,input[k]]));return send(res,200,{result:check(await db.rpc(name,args))});
     }
     const parts=path.split('/').filter(Boolean),resource=parts[2],id=parts[3];if(!Object.hasOwn(resources,resource))throw new HttpError(404,'Not found.');
     if(req.method==='GET'){
      const selection=resource==='contacts'?'*,enquiries(id,topic,status,received_at)':'*';let query=db.from(resource).select(selection,{count:'exact'});if(resource==='contacts')query=query.order('received_at',{referencedTable:'enquiries',ascending:false}).limit(3,{referencedTable:'enquiries'});if(id)query=query.eq('id',uuid(id));for(const name of filters)if(params.has(name))query=query.eq(name,params.get(name));
      const q=params.get('q');if(q&&searchFields[resource]){if(q.length>100)throw new HttpError(422,'Search is too long.');const safe=q.replace(/[^\p{L}\p{N}@. _-]/gu,'');query=query.or(searchFields[resource].map(f=>`${f}.ilike.%${safe}%`).join(','));}
      if(params.get('from'))query=query.gte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('from'));if(params.get('to'))query=query.lte(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':resource==='tasks'?'due_at':'created_at',params.get('to'));
-     const offset=Math.max(0,Number(params.get('offset'))||0);const result=await query.order(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':'id',{ascending:resource==='appointments'}).range(offset,offset+49);check(result);return send(res,200,{rows:result.data,total:result.count,offset});
+     const offset=Math.max(0,Number(params.get('offset'))||0);const result=await query.order(resource==='enquiries'?'received_at':resource==='appointments'?'starts_at':'id',{ascending:resource==='appointments'}).range(offset,offset+49);check(result);
+     if(owner&&['enquiries','contacts'].includes(resource)){
+      const entries=resource==='enquiries'?result.data:result.data.flatMap(c=>c.enquiries||[]);
+      if(entries.length){const proof=await db.from('email_verifications').select('enquiry_id,status,expires_at,confirmed_at,requested_at').in('enquiry_id',entries.map(e=>e.id)).order('requested_at',{ascending:false});
+       if(!proof.error)for(const entry of entries){const v=proof.data.find(v=>v.enquiry_id===entry.id);entry.email_confirmation=v?(v.status==='pending'&&Date.parse(v.expires_at)<Date.now()?'expired':v.status):'not_requested';}
+      }
+     }
+     return send(res,200,{rows:result.data,total:result.count,offset});
     }
     if(!owner)throw new HttpError(403,'Only the owner can change records in this release.');
     if(!resources[resource].length)throw new HttpError(403,'This record is read-only.');

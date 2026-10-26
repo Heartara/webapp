@@ -1,11 +1,13 @@
+import {deliverConfirmations} from './src/email-confirmation.js';
 import {createClient} from '@supabase/supabase-js';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolveConfiguration} from './src/configuration.js';
-export async function deliverBatch(db,{mode='sandbox',sandboxDir='/tmp/heartara-mail-preview',send,crmUrl,recipient}={}){
+export async function deliverBatch(db,{mode='sandbox',sandboxDir='/tmp/heartara-mail-preview',send,crmUrl,recipient,env=process.env}={}){
+ let confirmations={processed:0};
  const settings=await db.from('business_settings').select('notification_email,notification_enabled').eq('id',true).single();if(settings.error)throw Error('Notification settings unavailable');
  const destination=String(settings.data.notification_email||'').trim();
- if(mode!=='sandbox'&&(!settings.data.notification_enabled||!destination||(recipient&&recipient.toLowerCase()!==destination.toLowerCase())))return {processed:0,disabled:true};
+ if(mode!=='sandbox'&&(!settings.data.notification_enabled||!destination||(recipient&&recipient.toLowerCase()!==destination.toLowerCase())))return {...await deliverConfirmations(db,{mode,sandboxDir,send,env}),disabled:true};
  const {data:jobs,error}=await db.rpc('claim_notifications',{p_limit:10});if(error)throw Error('Cannot claim notification jobs');
  for(const job of jobs){
   try{
@@ -17,14 +19,15 @@ export async function deliverBatch(db,{mode='sandbox',sandboxDir='/tmp/heartara-
    const result=await db.rpc('finish_notification',{p_id:job.id,p_lease:job.lease_token,p_status:mode==='sandbox'?'sandboxed':'provider_accepted',p_provider:provider,p_error:null});if(result.error)throw Error('Could not record provider outcome');
   }catch(error){await db.rpc('finish_notification',{p_id:job.id,p_lease:job.lease_token,p_status:error.permanent?'failed':'queued',p_provider:null,p_error:error.safeReason==='retry_window_expired'?'Manual review required: provider retry window expired':error.permanent?'Email service rejected the request. Check the verified sender and API key.':'Notification transport unavailable; retry scheduled'});}
  }
- return {processed:jobs.length};
+ confirmations=await deliverConfirmations(db,{mode,sandboxDir,send,env});
+ return {processed:jobs.length+confirmations.processed};
 }
 export function notificationTransport(env=process.env) {
  const mode=env.EMAIL_MODE||'sandbox';if(!['sandbox','resend'].includes(mode))throw Error('Choose sandbox or resend mail mode');
  const recipient=env.OWNER_NOTIFICATION_EMAIL;
  if(mode==='resend'&&(!env.RESEND_API_KEY||!env.EMAIL_FROM))throw Error('Verified sending configuration required');
- const send=async(content,key,destination)=>{if(!destination&&!recipient)throw Error('Notification recipient is missing');const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:env.EMAIL_FROM,to:[destination||recipient],subject:content.subject,text:content.text})});if(!response.ok){const error=Error('Provider rejected notification');error.permanent=response.status>=400&&response.status<500&&response.status!==429;throw error;}const result=await response.json();return result.id;};
- return {mode,send,recipient,crmUrl:env.CRM_PUBLIC_URL||'https://www.heartarahealing.com/crm/',sandboxDir:env.MAIL_PREVIEW_DIR||'/tmp/heartara-mail-preview'};
+ const send=async(content,key,destination,options={})=>{if(!destination&&!recipient)throw Error('Notification recipient is missing');const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:env.EMAIL_FROM,to:[destination||recipient],subject:content.subject,text:content.text,...(options.replyTo?{reply_to:options.replyTo}:{})})});if(!response.ok){const error=Error('Provider rejected notification');error.permanent=response.status>=400&&response.status<500&&response.status!==429;throw error;}const result=await response.json();return result.id;};
+ return {env,mode,send,recipient,crmUrl:env.CRM_PUBLIC_URL||'https://www.heartarahealing.com/crm/',sandboxDir:env.MAIL_PREVIEW_DIR||'/tmp/heartara-mail-preview'};
 }
 async function main(){
  const connection=resolveConfiguration();if(!connection.ready)throw Error('Supabase connection is not configured');
